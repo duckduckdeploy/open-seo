@@ -68,6 +68,11 @@ export default function RestApiPage() {
         <code>POST /projects/:projectId/lookups/:name</code> runs one paid lookup with its input as the JSON body. Inputs
         are validated before anything is spent; omitted market fields default to the project&apos;s.
       </p>
+      <p>
+        <code>POST /lookups/:name</code> runs the same lookups without a project, as the dashboard&apos;s SEO tools do.
+        Give the market in the query string, for example <code>?locationCode=2276&amp;language=de</code>; it defaults to
+        the United States in English. Usage is logged without a project.
+      </p>
       <DocTable
         caption="Lookup query parameters"
         head={['Parameter', 'Effect']}
@@ -76,6 +81,8 @@ export default function RestApiPage() {
           ['?dryRun=1', 'Return { estimate: { min, max } } and spend nothing. max is null for token-priced lookups.'],
           ['?refresh=1', 'Skip the cache and pay for fresh data.'],
           ['?maxCostUsd=0.50', 'Refuse with cost_ceiling_exceeded if the worst-case price is higher. Must be a positive number.'],
+          ['?locationCode=2276', 'Without a project only: the market. The country is looked up from the code unless ?country= is given.'],
+          ['?language=de', 'Without a project only: the search language. Defaults to en.'],
         ]}
       />
       <CodeBlock label="Terminal" code={example} />

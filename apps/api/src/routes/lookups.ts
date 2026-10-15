@@ -6,8 +6,9 @@ import { z } from "zod";
 import { db, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { parse } from "../lib/errors";
+import { locationInfo } from "../lib/locations";
 import { getYep, monthStart } from "../lib/yep";
-import { lookups } from "../services/lookups";
+import { lookups, type Market } from "../services/lookups";
 import { runLookup } from "../services/run-lookup";
 
 const locationCache = new Map<string, { at: number; rows: unknown[] }>();
@@ -80,6 +81,44 @@ export async function lookupRoutes(app: FastifyInstance) {
       return { ok: true, data };
     },
   );
+
+  /**
+   * The same lookups without a project, for the standalone tools. The market comes from the
+   * query string (?locationCode=2276&language=de) and defaults to the United States in English.
+   * Usage is logged without a project.
+   */
+  app.post<{ Params: { name: string }; Querystring: Record<string, string | undefined> }>("/lookups/:name", async (request) => {
+    const user = await requireUser(request);
+    const q = parse(
+      z.object({
+        maxCostUsd: z.coerce.number().positive().finite().optional(),
+        locationCode: z.coerce.number().int().positive().optional(),
+        country: z.string().trim().length(2).toLowerCase().optional(),
+        language: z.string().trim().min(2).max(10).optional(),
+      }),
+      {
+        maxCostUsd: request.query.maxCostUsd || undefined,
+        locationCode: request.query.locationCode || undefined,
+        country: request.query.country || undefined,
+        language: request.query.language || undefined,
+      },
+    );
+    const data = await runLookup(user.id, await standaloneMarket(q), request.params.name, request.body, {
+      dryRun: request.query.dryRun === "1",
+      refresh: request.query.refresh === "1",
+      maxCostUsd: q.maxCostUsd,
+    });
+    return { ok: true, data };
+  });
+}
+
+const US_MARKET: Market = { id: null, locationCode: 2840, country: "us", language: "en" };
+
+/** A market for a standalone lookup. A location code without its country is looked up (free). */
+async function standaloneMarket(q: { locationCode?: number; country?: string; language?: string }): Promise<Market> {
+  if (q.locationCode == null || q.locationCode === US_MARKET.locationCode) return { ...US_MARKET, language: q.language ?? US_MARKET.language };
+  const country = q.country ?? (await locationInfo(q.locationCode)).country;
+  return { id: null, locationCode: q.locationCode, country, language: q.language ?? "en" };
 }
 
 /** Paid calls and spend this month (UTC), with the user's monthly limit. */

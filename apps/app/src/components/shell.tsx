@@ -19,6 +19,7 @@ import {
   Star,
   Swords,
   TrendingUp,
+  Wrench,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +29,7 @@ import { ApiError } from "@/lib/api";
 import { signOut } from "@/lib/auth";
 import { useMe, useProject } from "@/lib/hooks";
 import { BalanceAlert, BalanceChip, BalancePanel } from "./balance";
+import { TOOLS } from "./research/tool-catalog";
 import { cx, Spinner } from "./ui";
 
 const projectNav = [
@@ -150,13 +152,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
           {params.projectId ? (
             <ProjectNav projectId={params.projectId} pathname={pathname} />
           ) : (
-            <nav className="space-y-0.5" aria-label="Main">
-              <NavLink href="/projects" label="Projects" icon={FolderKanban} active={pathname.startsWith("/projects")} />
-            </nav>
+            <>
+              <nav className="space-y-0.5" aria-label="Main">
+                <NavLink href="/projects" label="Projects" icon={FolderKanban} active={pathname.startsWith("/projects")} />
+                <NavLink href="/tools" label="SEO tools" icon={Wrench} active={pathname === "/tools"} />
+              </nav>
+              <nav className="mt-4 space-y-0.5" aria-label="SEO tools">
+                <p className="px-2.5 pb-1 font-mono text-[11px] uppercase tracking-wide text-faint">Tools</p>
+                {TOOLS.filter((tool) => !tool.slug.includes("?")).map((tool) => (
+                  <NavLink key={tool.slug} href={`/tools/${tool.slug}`} label={tool.title} icon={tool.icon} active={pathname.startsWith(`/tools/${tool.slug}`)} />
+                ))}
+              </nav>
+            </>
           )}
         </div>
         <div className="mt-3 space-y-0.5 border-t border-line pt-3">
           <BalancePanel />
+          {params.projectId && <NavLink href="/tools" label="SEO tools" icon={Wrench} active={false} />}
           <NavLink href="/settings" label="Settings and usage" icon={Settings} active={pathname.startsWith("/settings")} />
           <button type="button" onClick={onSignOut} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink">
             <LogOut className="size-4" aria-hidden /> Sign out

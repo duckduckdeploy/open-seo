@@ -16,6 +16,8 @@ import { Button, Card, CostNote, cx, EmptyState, ErrorNote, Field, Input, PageHe
 import { api, num, usd } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
 import { downloadCsv } from "@/lib/lookup";
+import { keywordToolLabel, OpenInTool } from "@/components/research/tool-link";
+import { toolLinks } from "@/lib/scope";
 
 const PAGE_SIZE = 100;
 const SORTS = ["keyword", "volume", "cpc", "difficulty", "createdAt"] as const;
@@ -224,8 +226,9 @@ function SavedKeywords({ project }: { project: Project }) {
         rowHeader: true,
         sortValue: (row) => row.keyword,
         render: (row) => (
-          <span className="font-medium">
+          <span className="inline-flex items-center gap-1 font-medium">
             {row.keyword}
+            {row.locationCode === project.locationCode && <OpenInTool href={toolLinks.keyword(row.keyword, project)} label={keywordToolLabel(row.keyword)} />}
             {row.locationCode !== project.locationCode && (
               <span className="ml-2 font-mono text-[11px] font-normal text-muted" title="Saved for a different market than the project default">
                 loc {row.locationCode}

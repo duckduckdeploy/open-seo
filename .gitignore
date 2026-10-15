@@ -40,8 +40,8 @@ CLAUDE.local.md
 id_rsa*
 id_ed25519*
 # Internal docs, research and deployment notes live outside this repository
-internal/
-deploy/
-research/
-notes/
+/internal/
+/deploy/
+/research/
+/notes/
 *.private.md

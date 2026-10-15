@@ -3,20 +3,24 @@
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import { lookupTarget } from "./scope";
 
 export type Estimate = { min: number; max: number | null; formula?: string };
 export type LookupResult<T> = { name: string; estimate: Estimate; data: T; costUsd: number; cached: boolean; fetchedAt: string };
 
 /**
- * Runs a paid lookup (POST /projects/:id/lookups/:name) on demand.
+ * Runs a paid lookup on demand: POST /projects/:id/lookups/:name in a project, or
+ * POST /lookups/:name with the market in the query for the standalone tools (see scope.ts).
  * Nothing is fetched until `run` is called: lookups spend the user's YepAPI credits, so they
  * must follow an explicit action. A repeat of the same input is served from the server cache
  * for free; pass { refresh: true } to pay for fresh data.
  */
 export function useLookup<T, I extends object = Record<string, unknown>>(projectId: string, name: string) {
   const mutation = useMutation({
-    mutationFn: ({ input, refresh }: { input: I; refresh?: boolean }) =>
-      api<LookupResult<T>>(`/projects/${projectId}/lookups/${name}`, { method: "POST", body: input, query: { refresh: refresh ? 1 : undefined } }),
+    mutationFn: ({ input, refresh }: { input: I; refresh?: boolean }) => {
+      const { path, query } = lookupTarget(projectId, name);
+      return api<LookupResult<T>>(path, { method: "POST", body: input, query: { ...query, refresh: refresh ? 1 : undefined } });
+    },
   });
   return {
     run: (input: I, options?: { refresh?: boolean }) => mutation.mutate({ input, refresh: options?.refresh }),
@@ -44,8 +48,10 @@ export function useEstimate<I extends object>(projectId: string, name: string, i
   }, [serialised]);
   const query = useQuery({
     queryKey: ["estimate", projectId, name, settled],
-    queryFn: () =>
-      api<{ estimate: Estimate }>(`/projects/${projectId}/lookups/${name}`, { method: "POST", body: JSON.parse(settled as string), query: { dryRun: 1 } }).then((r) => r.estimate),
+    queryFn: () => {
+      const { path, query } = lookupTarget(projectId, name);
+      return api<{ estimate: Estimate }>(path, { method: "POST", body: JSON.parse(settled as string), query: { ...query, dryRun: 1 } }).then((r) => r.estimate);
+    },
     enabled: settled !== null,
     staleTime: Infinity,
     placeholderData: keepPreviousData,

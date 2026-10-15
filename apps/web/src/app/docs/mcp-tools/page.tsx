@@ -17,7 +17,8 @@ export default function McpToolsPage() {
       <p>
         The MCP server at <code>{'{API_URL}'}/mcp</code> offers 60 tools. Each one calls the same REST route the
         dashboard uses, with the caller&apos;s API key, so validation, prices, caching and limits are identical. Most
-        tools take an optional <code>project_id</code>; leave it out when the account has one project.
+        tools take an optional <code>project_id</code>; leave it out when the account has one project. With no project
+        at all, paid lookups run on their own in the market their input names (the United States by default).
       </p>
       <Callout title="Every paid lookup also takes">
         <ul className="list-[square] space-y-1 pl-5">

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db, schema } from "../src/db";
-import { readyUser, signUp } from "./client";
+import { client, readyUser, signUp, YEP_KEY } from "./client";
 import { harness } from "./harness";
 
 const callsTo = (path: string, since: number) => harness.fake.requests.slice(since).filter((r) => r.path === path);
@@ -193,5 +193,46 @@ describe("paid lookups", () => {
     const { api } = await signUp();
     const rows = await api.ok("GET", "/locations?q=austin");
     expect(rows[0]).toMatchObject({ code: 1026201 });
+  });
+});
+
+describe("standalone lookups", () => {
+  it("run without a project, in the US market by default", async () => {
+    const { api, userId } = await signUp();
+    await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const before = harness.fake.requests.length;
+    const ran = await api.ok("POST", "/lookups/keyword_ideas", { keyword: "plumber", limit: 10 });
+    expect(ran.data.keywords).toHaveLength(10);
+    expect(callsTo("/v1/seo/keywords/ideas", before)[0]?.body).toMatchObject({ location_code: 2840, language: "en" });
+    // The usage row is written just after the call returns.
+    let rows: (typeof schema.usageLog.$inferSelect)[] = [];
+    for (let i = 0; i < 50 && rows.length === 0; i++) {
+      rows = await db.select().from(schema.usageLog).where(eq(schema.usageLog.userId, userId));
+      if (!rows.length) await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    expect(rows.map((r) => r.projectId)).toEqual([null]);
+  });
+
+  it("take the market from the query string, with the country derived from the code", async () => {
+    const { api } = await signUp();
+    await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const before = harness.fake.requests.length;
+    await api.ok("POST", "/lookups/keyword_trends?locationCode=2276&language=de", { keywords: ["klempner"] });
+    expect(callsTo("/v1/seo/trends", before)[0]?.body).toMatchObject({ location: "de" });
+  });
+
+  it("price for free and still respect the ceiling", async () => {
+    const { api } = await signUp();
+    await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const before = harness.fake.requests.length;
+    expect(await api.ok("POST", "/lookups/backlinks_summary?dryRun=1", { target: "acme.com" })).toMatchObject({ dryRun: true });
+    const refused = await api.post("/lookups/domain_overview?maxCostUsd=0.01", { domain: "acme.com" });
+    expect(refused.body.error?.code).toBe("cost_ceiling_exceeded");
+    expect(harness.fake.requests.length).toBe(before);
+  });
+
+  it("need a signed-in user", async () => {
+    const res = await client({}).post("/lookups/keyword_ideas", { keyword: "x" });
+    expect(res.status).toBe(401);
   });
 });

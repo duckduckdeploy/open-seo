@@ -1,9 +1,6 @@
-import type { schema } from "../db";
 import { AppError, notFound, parse } from "../lib/errors";
 import { cached, getYep } from "../lib/yep";
-import { type Estimate, lookupByName } from "./lookups";
-
-type Project = typeof schema.projects.$inferSelect;
+import { type Estimate, lookupByName, type Market } from "./lookups";
 
 export type LookupOptions = { refresh?: boolean; dryRun?: boolean; maxCostUsd?: number };
 
@@ -26,7 +23,7 @@ export function assertWithinCeiling(estimate: Estimate, maxCostUsd: number | und
   }
 }
 
-export async function runLookup(userId: string, project: Project, name: string, rawInput: unknown, options: LookupOptions = {}) {
+export async function runLookup(userId: string, project: Market, name: string, rawInput: unknown, options: LookupOptions = {}) {
   const lookup = lookupByName.get(name);
   if (!lookup) throw notFound(`Lookup "${name}"`);
   const input = parse(lookup.input, rawInput ?? {});

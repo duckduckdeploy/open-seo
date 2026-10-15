@@ -1,5 +1,6 @@
 "use client";
 
+import { LANGUAGES } from "@/lib/scope";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -12,24 +13,6 @@ import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote, Field, Input, P
 import { api, dateTime, num } from "@/lib/api";
 import { type Project, useProject } from "@/lib/hooks";
 
-const LANGUAGES: [code: string, name: string][] = [
-  ["en", "English"],
-  ["es", "Spanish"],
-  ["fr", "French"],
-  ["de", "German"],
-  ["it", "Italian"],
-  ["pt", "Portuguese"],
-  ["nl", "Dutch"],
-  ["pl", "Polish"],
-  ["sv", "Swedish"],
-  ["da", "Danish"],
-  ["tr", "Turkish"],
-  ["ar", "Arabic"],
-  ["hi", "Hindi"],
-  ["ja", "Japanese"],
-  ["ko", "Korean"],
-  ["zh", "Chinese"],
-];
 const MAX_KEYWORDS = 1000;
 
 function NewTracker({ project, onDone }: { project: Project; onDone: () => void }) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getApp, readyUser } from "./client";
+import { getApp, readyUser, signUp, YEP_KEY } from "./client";
 import { harness } from "./harness";
 
 let id = 0;
@@ -60,6 +60,16 @@ describe("MCP server", () => {
     expect(harness.fake.requests.length).toBe(before);
     const ran = await call("keyword_ideas", { keyword: "plumber", limit: 10 });
     expect(ran.json.data.keywords).toHaveLength(10);
+  });
+
+  it("runs lookups standalone when the account has no project yet", async () => {
+    const user = await signUp();
+    await user.api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const { key } = await user.api.ok<{ key: string }>("POST", "/api-keys", { name: "agent" });
+    const res = await rpc({ apiKey: key }, "tools/call", { name: "keyword_ideas", arguments: { keyword: "plumber", limit: 5 } });
+    const result = res.body.result as { content: { text: string }[]; isError?: boolean };
+    expect(result.isError).toBeFalsy();
+    expect(JSON.parse(result.content[0]?.text ?? "{}").data.keywords).toHaveLength(5);
   });
 
   it("reports refusals as tool errors the agent can read", async () => {

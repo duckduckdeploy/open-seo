@@ -1,12 +1,16 @@
 import { sortLighthouseAudits } from "@openseo/shared";
 import { estimateCost, type KeywordFilter, type YepApi } from "@openseo/yepapi";
 import { z } from "zod";
-import type { schema } from "../db";
 import { toDomain } from "../lib/domain";
 import { locationInfo } from "../lib/locations";
 import { mapLimit } from "../lib/pool";
 
-type Project = typeof schema.projects.$inferSelect;
+/**
+ * The market a lookup runs in: a project's, or one chosen for a standalone tool (id null).
+ * Omitted location fields in a lookup's input fall back to it.
+ */
+export type Market = { id: string | null; locationCode: number; country: string; language: string };
+type Project = Market;
 export type Estimate = { min: number; max: number | null; formula?: string };
 /** `partial`: some paid parts failed; the result is returned but not cached. */
 type Result = { data: unknown; costUsd: number; partial?: boolean };

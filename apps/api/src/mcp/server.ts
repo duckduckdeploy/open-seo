@@ -125,11 +125,17 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
       },
       async (a) => {
         const { project_id, max_cost_usd, dry_run, refresh, ...input } = a as Json;
-        const id = await resolveProject(project_id as string | undefined);
         const query = new URLSearchParams();
         if (dry_run) query.set("dryRun", "1");
         if (refresh) query.set("refresh", "1");
         if (max_cost_usd != null) query.set("maxCostUsd", String(max_cost_usd));
+        // Without any project, run it standalone in the market the input names (default: US, English).
+        if (!project_id && ((await rest("GET", "/projects")) as unknown[]).length === 0) {
+          if (typeof input.locationCode === "number") query.set("locationCode", String(input.locationCode));
+          if (typeof input.language === "string") query.set("language", input.language);
+          return rest("POST", `/lookups/${lookup.name}?${query}`, input);
+        }
+        const id = await resolveProject(project_id as string | undefined);
         return rest("POST", `/projects/${id}/lookups/${lookup.name}?${query}`, input);
       },
     );

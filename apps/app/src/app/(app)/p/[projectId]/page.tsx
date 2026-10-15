@@ -397,7 +397,12 @@ function Overview({ project }: { project: Project }) {
               </li>
             ))}
           </ul>
-          <p className="border-t border-line px-4 py-2.5 text-xs text-muted">Each lookup shows its price before it runs. Nothing on this page costs anything.</p>
+          <p className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-4 py-2.5 text-xs text-muted">
+            <span>Each lookup shows its price before it runs. Nothing on this page costs anything.</span>
+            <Link href="/tools" className="font-medium text-ink underline underline-offset-2">
+              All SEO tools, outside this project
+            </Link>
+          </p>
         </Card>
       </div>
       <ProjectSettings key={`${project.id}:${project.locationCode}:${project.country}`} project={project} />
