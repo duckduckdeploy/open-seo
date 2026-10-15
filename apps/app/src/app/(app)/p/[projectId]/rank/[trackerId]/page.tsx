@@ -49,6 +49,9 @@ import { Badge, Button, Card, CardHeader, CostNote, cx, EmptyState, ErrorNote, F
 import { api, dateTime, num, usd } from "@/lib/api";
 import { downloadCsv } from "@/lib/lookup";
 import { compareValues as compare } from "@/lib/url";
+import { keywordToolLabel, OpenInTool } from "@/components/research/tool-link";
+import { useProject } from "@/lib/hooks";
+import { toolLinks } from "@/lib/scope";
 
 const TABS = ["keywords", "competitors", "runs", "settings"] as const;
 type TabId = (typeof TABS)[number];
@@ -151,8 +154,15 @@ function KeywordPanel({ trackerId, device, row, onClose }: { trackerId: string; 
     enabled: row !== null,
   });
   const latest = history.data?.latest;
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = useProject(projectId);
   return (
     <SidePanel open={row !== null} onClose={onClose} title={row?.keyword ?? ""} subtitle={<span className="capitalize">{device} results</span>}>
+      {row && (
+        <Link href={toolLinks.keyword(row.keyword, project.data)} className="inline-flex items-center gap-1 text-[13px] font-medium text-ink underline underline-offset-2">
+          Volume, difficulty, ideas and who ranks in Keyword overview
+        </Link>
+      )}
       {history.isPending && <Spinner />}
       <ErrorNote error={history.error} />
       {history.data && (
@@ -264,6 +274,8 @@ function AddKeywords({ tracker, onDone }: { tracker: TrackerDetail; onDone: () =
 
 function KeywordsTab({ tracker, device }: { tracker: TrackerDetail; device: Device }) {
   const queryClient = useQueryClient();
+  // Keyword links open the Keyword overview in the project's market (country-level data).
+  const project = useProject(tracker.projectId);
   const resultsKey = ["tracker", tracker.id, "results", device];
   const results = useQuery({ queryKey: resultsKey, queryFn: () => api<RankResults>(`/trackers/${tracker.id}/results`, { query: { device } }) });
   const [sort, setSort] = useState<Sort<SortKey> | null>(null);
@@ -477,9 +489,12 @@ function KeywordsTab({ tracker, device }: { tracker: TrackerDetail; device: Devi
                     </button>
                   </td>
                   <td className="min-w-44">
-                    <button type="button" onClick={() => setOpenId(row.id)} className="text-left font-medium underline decoration-line underline-offset-2 hover:decoration-ink">
-                      {row.keyword}
-                    </button>
+                    <span className="inline-flex items-center gap-1">
+                      <button type="button" onClick={() => setOpenId(row.id)} className="text-left font-medium underline decoration-line underline-offset-2 hover:decoration-ink">
+                        {row.keyword}
+                      </button>
+                      <OpenInTool href={toolLinks.keyword(row.keyword, project.data)} label={keywordToolLabel(row.keyword)} />
+                    </span>
                   </td>
                   <td className="whitespace-nowrap" title={row.error ?? undefined}>
                     <PositionCell row={row} />

@@ -39,6 +39,8 @@ export async function lookupRoutes(app: FastifyInstance) {
       return { ok: true, data: { ...data, available: true, month: await month, checkedAt: new Date() } };
     } catch (error) {
       if (isYepApiError(error) && error.isNotFound) {
+        // Documented, but YepAPI answers 404 for it at times; logged so it can be followed up.
+        request.log.warn({ yepRequestId: error.requestId }, "YepAPI balance endpoint returned 404");
         return { ok: true, data: { balanceUsd: null, balanceCents: null, autoTopup: null, available: false, month: await month, checkedAt: new Date() } };
       }
       month.catch(() => {});

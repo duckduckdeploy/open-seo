@@ -91,10 +91,19 @@ export function BalancePanel() {
         <p className="mt-1 text-xs text-neg">Could not check the balance. {balance.error.message}</p>
       ) : (
         <>
-          <p className={cx("mt-0.5 flex items-center gap-2 font-display text-xl font-semibold tabular", toneText[tone])} aria-live="polite">
-            <span className={cx("size-2 shrink-0 rounded-full", toneDot[tone])} aria-hidden />
-            {tone === "unknown" ? "Not reported" : usd(data?.balanceUsd)}
-          </p>
+          {tone === "unknown" ? (
+            <p className="mt-1 text-xs text-muted">
+              YepAPI does not share the balance with apps yet.{" "}
+              <a href="https://yepapi.com?ref=openseo" target="_blank" rel="noreferrer" className="font-medium text-ink underline underline-offset-2">
+                See it on YepAPI
+              </a>
+            </p>
+          ) : (
+            <p className={cx("mt-0.5 flex items-center gap-2 font-display text-xl font-semibold tabular", toneText[tone])} aria-live="polite">
+              <span className={cx("size-2 shrink-0 rounded-full", toneDot[tone])} aria-hidden />
+              {usd(data?.balanceUsd)}
+            </p>
+          )}
           {tone === "low" && <p className="mt-0.5 text-xs text-warn">Running low.</p>}
           {tone === "empty" && <p className="mt-0.5 text-xs text-neg">Empty. Paid lookups will fail.</p>}
           {data?.autoTopup && <p className="mt-0.5 text-[11px] text-muted">Auto top-up is on</p>}
