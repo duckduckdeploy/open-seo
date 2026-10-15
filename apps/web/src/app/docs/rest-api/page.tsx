@@ -96,7 +96,7 @@ export default function RestApiPage() {
           ['PUT /settings/yepapi-key', '{ apiKey }. Verified without spending credits. Never returned.'],
           ['DELETE /settings/yepapi-key', 'Remove the key.'],
           ['PUT /settings/budget', '{ monthlyBudgetUsd: number | null }.'],
-          ['GET /balance', 'Live YepAPI balance. Free, and works when the monthly limit is reached.'],
+          ['GET /balance', 'Live YepAPI balance and auto top-up, with this month’s paid calls, spend and limit. Free, and works when the monthly limit is reached.'],
           ['GET /usage', "This month's spend in total, by feature and by day, and the last 50 calls."],
           ['GET, POST /api-keys; DELETE /api-keys/:id', 'List, create ({ name }; the key is in the reply once) and revoke. Creating needs a signed-in session.'],
           ['GET /locations?q=&country=', 'Location codes. Free.'],

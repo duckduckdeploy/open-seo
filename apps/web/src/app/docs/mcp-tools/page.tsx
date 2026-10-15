@@ -40,7 +40,7 @@ export default function McpToolsPage() {
         mono={[2]}
         rows={[
           ['whoami', 'The signed-in user and whether a YepAPI key is connected.', 'free'],
-          ['get_balance', 'Remaining YepAPI balance for the key.', 'free'],
+          ['get_balance', 'Remaining YepAPI balance, whether auto top-up is on, and this month’s paid calls and spend.', 'free'],
           ['get_usage', "This month's spend, by feature.", 'free'],
           ['list_projects', 'Projects with website, market and language.', 'free'],
           ['create_project', 'Create a project. The country is worked out from location_code.', 'free'],

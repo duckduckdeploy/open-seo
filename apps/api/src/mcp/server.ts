@@ -72,7 +72,7 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
 
   // ── Account and projects ────────────────────────────────────────────────
   tool("whoami", "The signed-in user and whether a YepAPI key is connected.", {}, () => rest("GET", "/me"), true);
-  tool("get_balance", "Remaining YepAPI balance for the user's key. Free.", {}, () => rest("GET", "/balance"), true);
+  tool("get_balance", "Remaining YepAPI balance for the user's key, whether auto top-up is on, and this month's paid calls, spend and monthly limit. Free.", {}, () => rest("GET", "/balance"), true);
   tool("get_usage", "What OpenSEO has spent with the user's YepAPI key this month, by feature. Free.", {}, () => rest("GET", "/usage"), true);
   tool("list_projects", "List the user's projects with their website, market and language.", {}, () => rest("GET", "/projects"), true);
   tool(

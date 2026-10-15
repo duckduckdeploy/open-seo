@@ -12,6 +12,7 @@ import { finite, fixed, percent } from "@/components/research/util";
 import { Badge, Button, Card, ErrorNote, Field, Input, Spinner, Stat } from "@/components/ui";
 import { api, dateOnly, dateTime, num, usd } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
+import { useBalance } from "@/components/balance";
 
 type Tracker = {
   id: string;
@@ -184,7 +185,7 @@ function Overview({ project }: { project: Project }) {
   const path = `/projects/${project.id}`;
 
   // Everything on this page is free: stored data plus the account balance. No lookups run here.
-  const balance = useQuery({ queryKey: ["balance"], queryFn: () => api<{ balanceUsd?: number | null }>("/balance"), retry: false, staleTime: 60_000 });
+  const balance = useBalance();
   const usage = useQuery({ queryKey: ["usage", "total"], queryFn: () => api<{ total?: { costUsd?: number; calls?: number } }>("/usage") });
   const saved = useQuery({ queryKey: ["saved-keywords", project.id, "overview"], queryFn: () => api<SavedKeywordsList>(`${path}/saved-keywords`, { query: { limit: 5 } }) });
   const trackers = useQuery({ queryKey: ["overview", project.id, "trackers"], queryFn: () => api<Tracker[]>(`${path}/trackers`) });
@@ -209,7 +210,7 @@ function Overview({ project }: { project: Project }) {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {showBalance && <Stat label="YepAPI balance" value={balance.isPending ? "…" : usd(balance.data?.balanceUsd)} sub="prepaid credit left" />}
+        {showBalance && <Stat label="YepAPI balance" value={balance.isPending ? "…" : usd(balance.data?.balanceUsd)} sub={balance.data?.autoTopup ? "prepaid credit left · auto top-up on" : "prepaid credit left"} />}
         <Stat
           label="Spent this month"
           value={usage.isPending ? "…" : usage.error ? "—" : usd(usage.data?.total?.costUsd)}

@@ -86,7 +86,7 @@ describe("YepAPI key", () => {
     await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
     expect(await api.ok("GET", "/balance")).toMatchObject({ balanceUsd: 5, available: true });
     harness.fake.failures.set("/v1/account/balance", [{ status: 404, code: "NOT_FOUND" }]);
-    expect(await api.ok("GET", "/balance")).toEqual({ balanceUsd: null, balanceCents: null, available: false });
+    expect(await api.ok("GET", "/balance")).toMatchObject({ balanceUsd: null, balanceCents: null, available: false, month: { calls: 0 } });
     harness.fake.failures.delete("/v1/account/balance");
   });
 
@@ -98,10 +98,21 @@ describe("YepAPI key", () => {
     expect(res.body.error?.code).toBe("yepapi_key_missing");
   });
 
-  it("reports the live balance", async () => {
+  it("reports the live balance with this month's paid calls and spend", async () => {
     const { api } = await signUp();
     await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
-    expect(await api.ok("GET", "/balance")).toMatchObject({ balanceUsd: 5 });
+    await api.ok("PUT", "/settings/budget", { monthlyBudgetUsd: 20 });
+    expect(await api.ok("GET", "/balance")).toMatchObject({ balanceUsd: 5, balanceCents: 500, autoTopup: false, available: true, month: { calls: 0, spentUsd: 0, budgetUsd: 20 } });
+    const project = await api.ok("POST", "/projects", { name: "Balance" });
+    await api.ok("POST", `/projects/${project.id}/lookups/domain_overview`, { domain: "acme.com" });
+    // usage_log rows are written just after the call returns.
+    let after = await api.ok<{ month: { calls: number; spentUsd: number } }>("GET", "/balance");
+    for (let i = 0; i < 50 && after.month.calls === 0; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      after = await api.ok("GET", "/balance");
+    }
+    expect(after.month.calls).toBeGreaterThan(0);
+    expect(after.month.spentUsd).toBeGreaterThan(0);
   });
 });
 

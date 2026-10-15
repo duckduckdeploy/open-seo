@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { signOut } from "@/lib/auth";
 import { useMe, useProject } from "@/lib/hooks";
+import { BalanceAlert, BalanceChip, BalancePanel } from "./balance";
 import { cx, Spinner } from "./ui";
 
 const projectNav = [
@@ -128,9 +129,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Link href="/projects" className="font-display text-base font-semibold">
           Open<span className="bg-accent px-1 text-accent-fg">SEO</span>
         </Link>
-        <button type="button" onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} className="rounded-md p-1.5 hover:bg-sunken">
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <BalanceChip />
+          <button type="button" onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} className="rounded-md p-1.5 hover:bg-sunken">
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </header>
 
       <aside
@@ -152,6 +156,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           )}
         </div>
         <div className="mt-3 space-y-0.5 border-t border-line pt-3">
+          <BalancePanel />
           <NavLink href="/settings" label="Settings and usage" icon={Settings} active={pathname.startsWith("/settings")} />
           <button type="button" onClick={onSignOut} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink">
             <LogOut className="size-4" aria-hidden /> Sign out
@@ -170,6 +175,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
         )}
+        {!needsKey && <BalanceAlert />}
         <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">{children}</div>
       </main>
     </div>

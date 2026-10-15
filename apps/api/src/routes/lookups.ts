@@ -1,10 +1,12 @@
 import { MODEL_CATALOG, CURATED_MODELS } from "@openseo/shared";
 import { isYepApiError, searchLocations } from "@openseo/yepapi";
+import { and, eq, gt, gte, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { db, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { parse } from "../lib/errors";
-import { getYep } from "../lib/yep";
+import { getYep, monthStart } from "../lib/yep";
 import { lookups } from "../services/lookups";
 import { runLookup } from "../services/run-lookup";
 
@@ -24,16 +26,21 @@ export async function lookupRoutes(app: FastifyInstance) {
     return { ok: true, data: results };
   });
 
-  // Free: remaining prepaid balance on the user's YepAPI account. YepAPI has not always offered
-  // this endpoint, so a 404 means "unknown", not an error.
+  // Free: remaining prepaid balance on the user's YepAPI account, with this month's paid calls
+  // and spend from usage_log alongside. YepAPI has not always offered the balance endpoint, so a
+  // 404 means "unknown", not an error.
   app.get("/balance", async (request) => {
     const user = await requireUser(request);
     const yep = await getYep({ userId: user.id, feature: "account", freeOnly: true });
+    const month = monthUsage(user.id);
     try {
       const { data } = await yep.account.balance();
-      return { ok: true, data: { ...data, available: true } };
+      return { ok: true, data: { ...data, available: true, month: await month, checkedAt: new Date() } };
     } catch (error) {
-      if (isYepApiError(error) && error.isNotFound) return { ok: true, data: { balanceUsd: null, balanceCents: null, available: false } };
+      if (isYepApiError(error) && error.isNotFound) {
+        return { ok: true, data: { balanceUsd: null, balanceCents: null, autoTopup: null, available: false, month: await month, checkedAt: new Date() } };
+      }
+      month.catch(() => {});
       throw error;
     }
   });
@@ -73,4 +80,19 @@ export async function lookupRoutes(app: FastifyInstance) {
       return { ok: true, data };
     },
   );
+}
+
+/** Paid calls and spend this month (UTC), with the user's monthly limit. */
+async function monthUsage(userId: string) {
+  const [[usage], [settings]] = await Promise.all([
+    db
+      .select({
+        calls: sql<number>`count(*)::int`,
+        spentUsd: sql<number>`round(coalesce(sum(${schema.usageLog.costUsd}), 0)::numeric, 4)::float8`,
+      })
+      .from(schema.usageLog)
+      .where(and(eq(schema.usageLog.userId, userId), gte(schema.usageLog.createdAt, monthStart()), gt(schema.usageLog.costUsd, 0))),
+    db.select({ budgetUsd: schema.userSettings.monthlyBudgetUsd }).from(schema.userSettings).where(eq(schema.userSettings.userId, userId)).limit(1),
+  ]);
+  return { since: monthStart(), calls: usage?.calls ?? 0, spentUsd: usage?.spentUsd ?? 0, budgetUsd: settings?.budgetUsd ?? null };
 }

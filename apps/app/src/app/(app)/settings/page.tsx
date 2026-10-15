@@ -1,9 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, Trash2 } from "lucide-react";
+import { Check, Copy, RefreshCw, Trash2 } from "lucide-react";
 import { agentSetupPrompt } from "@openseo/shared";
 import { useState } from "react";
+import { useBalance } from "@/components/balance";
 import { Badge, Button, Card, CardHeader, ErrorNote, Field, Input, PageHeader, Spinner, Stat, Table } from "@/components/ui";
 import { api, dateTime, num, usd } from "@/lib/api";
 import type { Me } from "@/lib/auth";
@@ -211,8 +212,8 @@ function ApiKeysCard() {
 
 function UsageCard() {
   const usage = useQuery({ queryKey: ["usage"], queryFn: () => api<Usage>("/usage") });
-  // Fails when no key is connected; the tile then shows a dash.
-  const balance = useQuery({ queryKey: ["balance"], queryFn: () => api<{ balanceUsd: number | null; available?: boolean }>("/balance"), retry: false });
+  // Not fetched when no key is connected; the tile then shows a dash.
+  const balance = useBalance();
   if (usage.isPending) return <Spinner />;
   if (usage.error) return <ErrorNote error={usage.error} />;
   const { total, byFeature, recent } = usage.data;
@@ -221,13 +222,24 @@ function UsageCard() {
       <CardHeader
         title="Usage this month"
         description="What OpenSEO has spent with your key, and what is left on your YepAPI account."
+        action={
+          <Button size="sm" onClick={() => void balance.refetch()} loading={balance.isFetching} disabled={balance.isPending && !balance.isFetching}>
+            {!balance.isFetching && <RefreshCw className="size-3.5" aria-hidden />} Check balance
+          </Button>
+        }
       />
       <div className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-3">
           <Stat
             label="YepAPI balance"
             value={usd(balance.data?.balanceUsd)}
-            sub={balance.data?.available === false ? "YepAPI does not report it here; see your YepAPI dashboard" : "Live from YepAPI"}
+            sub={
+              balance.data?.available === false
+                ? "YepAPI does not report it here; see your YepAPI dashboard"
+                : balance.data
+                  ? `Live from YepAPI, checked ${dateTime(balance.data.checkedAt)}${balance.data.autoTopup ? " · auto top-up on" : ""}`
+                  : "Live from YepAPI"
+            }
           />
           <Stat label="Spent" value={usd(total.costUsd)} />
           <Stat label="Paid calls" value={num(total.calls)} />
