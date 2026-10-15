@@ -63,6 +63,7 @@ export function lookupTarget(scopeId: string, name: string): { path: string; que
 }
 
 // ── Links from project pages into the standalone tools ──────────────────────
+// go=1: the user clicked to see this, so the tool runs it at once (see useRunFromLink).
 
 const qs = (params: Record<string, string | number | null | undefined>) => {
   const search = new URLSearchParams();
@@ -78,10 +79,10 @@ const marketParams = (market?: Pick<Market, "locationCode" | "locationName" | "c
     : {};
 
 export const toolLinks = {
-  keyword: (keyword: string, market?: Market) => `/tools/keyword-overview${qs({ q: keyword, ...marketParams(market) })}`,
+  keyword: (keyword: string, market?: Market) => `/tools/keyword-overview${qs({ q: keyword, ...marketParams(market), go: 1 })}`,
   ideas: (keyword: string, market?: Market) => `/tools/keyword-ideas${qs({ q: keyword, ...marketParams(market) })}`,
   domain: (domain: string, market?: Market) => `/tools/domain-overview${qs({ domain, ...marketParams(market) })}`,
   backlinks: (target: string) => `/tools/backlink-checker${qs({ target })}`,
-  serp: (keyword: string, market?: Market) => `/tools/serp-checker${qs({ q: keyword, ...marketParams(market) })}`,
-  page: (url: string) => `/tools/page-analyser${qs({ url })}`,
+  serp: (keyword: string, market?: Market) => `/tools/serp-checker${qs({ q: keyword, ...marketParams(market), go: 1 })}`,
+  page: (url: string) => `/tools/page-analyser${qs({ url, go: 1 })}`,
 };

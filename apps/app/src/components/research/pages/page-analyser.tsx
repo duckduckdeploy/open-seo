@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { Price, ResultMeta, RunPrompt, sumEstimates, useStickyLookup } from "@/components/research/lookup-ui";
 import { DifficultyPill } from "@/components/research/pills";
 import type { OnPageData, UrlMetricsData, UrlMetricsInput } from "@/components/research/types";
-import { finite, useSetUrl } from "@/components/research/util";
+import { finite, useRunFromLink, useSetUrl } from "@/components/research/util";
 import { Badge, Button, Card, CardHeader, ErrorNote, Field, Input, PageHeader, Spinner, Stat } from "@/components/ui";
 import { num } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
@@ -72,6 +72,15 @@ export function PageAnalyser({ project }: { project: Project }) {
   };
   const pending = metrics.isPending || onpage.isPending;
 
+  // One action runs both lookups: Enter, the button, or arriving from a clicked link.
+  function run(target = url) {
+    if (!target) return;
+    setUrl({ url: target });
+    metrics.run({ urls: [target] });
+    onpage.run({ url: target });
+  }
+  useRunFromLink(() => run(toUrl(params.get("url") ?? "")));
+
   const analysed = metrics.last?.input.urls[0] ?? onpage.last?.input.url;
   const m = metrics.last?.result.data.urls?.[0];
   const page = onpage.last?.result.data.pages?.[0];
@@ -86,10 +95,7 @@ export function PageAnalyser({ project }: { project: Project }) {
           className="flex flex-wrap items-end gap-3 p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!url || !metricsInput || !pageInput) return;
-            setUrl({ url });
-            metrics.run(metricsInput);
-            onpage.run(pageInput);
+            run();
           }}
         >
           <div className="min-w-64 flex-1">
@@ -97,7 +103,7 @@ export function PageAnalyser({ project }: { project: Project }) {
               <Input value={text} onChange={(event) => setText(event.target.value)} placeholder="https://example.com/blog/post" maxLength={2000} required autoFocus={!text} />
             </Field>
           </div>
-          <Button type="submit" variant="primary" loading={pending} disabled={!url || price.stale}>
+          <Button type="submit" variant="primary" loading={pending} disabled={!url}>
             {!pending && <FileSearch className="size-4" aria-hidden />} Analyse page
           </Button>
           <div className="pb-2">

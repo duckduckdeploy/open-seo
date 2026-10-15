@@ -249,7 +249,7 @@ export function DomainOverview({ project }: { project: Project }) {
                 <Input value={value} onChange={(event) => setValue(event.target.value)} placeholder="example.com" maxLength={253} autoCapitalize="none" spellCheck={false} required />
               </Field>
             </div>
-            <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input || estimate.stale}>
+            <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input}>
               Run overview
             </Button>
           </div>

@@ -226,7 +226,7 @@ export function KeywordResearch({ project }: { project: Project }) {
           )}
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input || estimate.stale}>
+            <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input}>
               {!lookup.isPending && <Search className="size-4" aria-hidden />} Find keywords
             </Button>
             <Price estimate={estimate} active={input !== null} />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef } from "react";
 import type { KeywordToSave, N, S, TrendPoint } from "./types";
 
 type ParamValue = string | number | boolean | null | undefined;
@@ -117,3 +118,20 @@ export const estimatedVisits = (volume: N, position: N) =>
 
 const QUESTION = /^(how|what|why|when|where|which|who|whose|can|could|does|do|did|is|are|was|should|will|would)\b/i;
 export const isQuestion = (keyword: string) => QUESTION.test(keyword.trim()) || keyword.trim().endsWith("?");
+
+/**
+ * Runs a tool once when it was opened from a link marked go=1 (a keyword or page the user clicked),
+ * then drops the mark, so a reload or a shared link does not run it again.
+ */
+export function useRunFromLink(run: () => void) {
+  const params = useSearchParams();
+  const setUrl = useSetUrl();
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || params.get("go") !== "1") return;
+    done.current = true;
+    setUrl({ go: null });
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
+}

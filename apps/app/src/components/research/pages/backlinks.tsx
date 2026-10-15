@@ -617,7 +617,7 @@ export function Backlinks({ project }: { project: Project }) {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button type="submit" variant="primary" loading={pending} disabled={!input || combined.stale}>
+            <Button type="submit" variant="primary" loading={pending} disabled={!input}>
               Run summary + history
             </Button>
             <Price estimate={combined} active={input !== null} />

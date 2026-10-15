@@ -101,7 +101,7 @@ export function LookupTablePanel<D, R extends object, I extends object>({
       >
         {controls && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">{controls}</div>}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input || estimate.stale}>
+          <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input}>
             {runLabel}
           </Button>
           <Price estimate={estimate} active={input !== null} />

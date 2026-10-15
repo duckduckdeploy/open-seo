@@ -27,7 +27,7 @@ export type EstimateQuery = { data?: Estimate; error: unknown; isPending: boolea
 /**
  * Price of a lookup before it runs. Hidden while the form is incomplete. While the input has
  * changed since the price was computed it says "Checking price…" rather than show an old figure;
- * callers keep their Run button disabled for that moment too (`estimate.stale`).
+ * the SEO tools still run on Enter at once; pages with larger spends keep Run disabled meanwhile.
  */
 export function Price({ estimate, active = true, note }: { estimate: EstimateQuery; active?: boolean; note?: string }) {
   if (!active) return null;
