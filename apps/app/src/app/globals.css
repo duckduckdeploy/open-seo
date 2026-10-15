@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+/* Tokens mirror apps/web/src/app/globals.css so the site and the app read as one product. */
+@theme {
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-sunken: #f1f1ec;
+  --color-ink: #111210;
+  --color-muted: #5c5e57;
+  --color-faint: #8b8d85;
+  --color-line: #deded6;
+  --color-accent: #2563eb;
+  --color-accent-fg: #ffffff;
+  --color-accent-text: #1d4ed8;
+  --color-pos: #0f7b4a;
+  --color-neg: #c2321f;
+  --color-warn: #a35f00;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  --shadow-hard-sm: 2px 2px 0 0 var(--color-ink);
+  --shadow-hard: 4px 4px 0 0 var(--color-ink);
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #0e0f0c;
+      --color-surface: #161714;
+      --color-sunken: #1e201c;
+      --color-ink: #f2f2ea;
+      --color-muted: #a3a59b;
+      --color-faint: #73756c;
+      --color-line: #2b2d28;
+      --color-accent: #2563eb;
+      --color-accent-fg: #ffffff;
+      --color-accent-text: #8ab4ff;
+      --color-pos: #4ade94;
+      --color-neg: #ff7a66;
+      --color-warn: #f5b041;
+    }
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,14 @@
+{
+  "name": "openseo",
+  "owner": { "name": "OpenSEO" },
+  "metadata": {
+    "description": "The OpenSEO plugin: the MCP connection plus SEO workflow skills."
+  },
+  "plugins": [
+    {
+      "name": "openseo",
+      "source": "./plugins/openseo",
+      "description": "Connect to OpenSEO over MCP and get SEO skills: coach, audit, keyword research, competitor analysis, Search Console review and local SEO."
+    }
+  ]
+}

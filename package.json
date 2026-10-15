@@ -1,0 +1,28 @@
+{
+  "name": "openseo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenSEO: the open-source SEO suite you control. Self-host it with Docker or use it at openseo.gg.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter ./apps/* dev",
+    "dev:api": "pnpm --filter @openseo/api dev",
+    "dev:app": "pnpm --filter @openseo/app dev",
+    "dev:web": "pnpm --filter @openseo/web dev",
+    "db:generate": "pnpm --filter @openseo/api db:generate",
+    "db:migrate": "pnpm --filter @openseo/api db:migrate",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "@tailwindcss/oxide"
+    ]
+  }
+}

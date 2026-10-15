@@ -1,0 +1,47 @@
+# Dependencies and build output
+node_modules
+.next
+dist
+out
+coverage
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment (keep the .env.example templates)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS and editor files
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Private: never publish
+# Claude Code / agent settings and local memory (the plugin in plugins/ and .claude-plugin/ is public)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+/.mcp.json
+# Keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+# Internal docs, research and deployment notes live outside this repository
+internal/
+deploy/
+research/
+notes/
+*.private.md

@@ -1,0 +1,8 @@
+{
+  "name": "openseo",
+  "version": "0.1.0",
+  "description": "OpenSEO over MCP, with SEO workflow skills. Set OPENSEO_API_KEY (an oseo_ key from Settings) and, when self-hosting, OPENSEO_MCP_URL.",
+  "author": { "name": "OpenSEO" },
+  "license": "MIT",
+  "keywords": ["seo", "mcp", "keyword-research", "rank-tracking", "site-audit"]
+}

@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791894873582,
+      "tag": "0000_dapper_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792020710401,
+      "tag": "0001_run_ceiling_and_heartbeat",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792078094745,
+      "tag": "0002_google_free_tools_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792088039007,
+      "tag": "0003_oauth_for_mcp",
+      "breakpoints": true
+    }
+  ]
+}

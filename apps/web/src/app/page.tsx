@@ -1,0 +1,255 @@
+import Link from 'next/link';
+import { ArrowRight, Check } from 'lucide-react';
+import { ButtonLink } from '@/components/button';
+import { CodeBlock } from '@/components/code-block';
+import { CtaBand } from '@/components/cta-band';
+import { FeatureGrid } from '@/components/feature-grid';
+import { JsonLd } from '@/components/json-ld';
+import { PriceTable, rowsFromPricing } from '@/components/price-table';
+import { ProductMock } from '@/components/product-mock';
+import { SectionHeader } from '@/components/section';
+import { AUDIT_CHECKS } from '@/content/features';
+import { priceRows } from '@/content/pricing';
+import { selfHostDocker } from '@/content/snippets';
+import { AgentFold } from '@/components/agent-fold';
+import { pageMeta } from '@/lib/metadata';
+import { GITHUB_URL, SIGN_UP_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL, YEPAPI_URL } from '@/lib/site';
+
+export const metadata = pageMeta({
+  title: `${SITE_NAME}: ${SITE_TAGLINE}`,
+  description: SITE_DESCRIPTION,
+  path: '/',
+  absoluteTitle: true,
+});
+
+const textLink =
+  'inline-flex items-center gap-1.5 font-medium text-accent-text underline-offset-4 hover:underline';
+
+const ledger = [
+  { value: 'MIT', label: 'Open-source licence' },
+  { value: '1', label: 'Docker command to self-host' },
+  { value: '60', label: 'MCP tools for your AI agent' },
+  { value: String(AUDIT_CHECKS), label: 'Site audit checks, free' },
+];
+
+const control = [
+  {
+    title: 'Open source, all of it',
+    body: 'The app, the API, the crawler and the agent server are MIT licensed. Read every line, change what you need, and keep your changes.',
+  },
+  {
+    title: 'Your server, your data',
+    body: 'Run it on your own computer or server with Docker. Your keywords, rankings and audits live in your own database, and you decide what leaves it.',
+  },
+  {
+    title: 'No surprise bills',
+    body: 'Every action shows its cost before it runs. Set a monthly limit and nothing is spent past it, by you or by any agent.',
+  },
+  {
+    title: 'Agents on a leash',
+    body: 'Sixty MCP tools give your agent the whole workspace, and every paid call takes a ceiling: a call that could cost more than you agreed is refused before it starts.',
+  },
+];
+
+const selfHostPoints = [
+  'One image and one compose file: database, API, dashboard and site',
+  'Any machine that runs Docker: your PC, a home server or a $10 cloud server',
+  'Automatic HTTPS for your own domain',
+];
+
+export default function HomePage() {
+  return (
+    <>
+      <JsonLd
+        data={{
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: SITE_NAME,
+          url: SITE_URL,
+          description: SITE_DESCRIPTION,
+          applicationCategory: 'BusinessApplication',
+          operatingSystem: 'Web, Linux, Windows, macOS (Docker)',
+          license: 'https://opensource.org/license/mit',
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        }}
+      />
+
+      {/* Hero */}
+      <section aria-labelledby="hero-title" className="relative overflow-hidden">
+        <div className="bg-glow pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="container-page relative pt-20 pb-20 md:pt-28 md:pb-24 xl:pt-32">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="animate-rise inline-flex items-center gap-2 rounded-full border border-accent-line bg-surface px-3.5 py-1.5 text-sm font-medium text-accent-text">
+              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
+              Open source · MIT licence · Self-hostable
+            </p>
+
+            <h1 id="hero-title" className="text-display animate-rise mt-8 text-balance [animation-delay:60ms]">
+              The <span className="mark">open&#8209;source</span> SEO suite you control
+            </h1>
+
+            <p className="text-lede animate-rise mx-auto mt-7 max-w-2xl text-pretty [animation-delay:120ms]">
+              Keyword research, rank tracking, backlinks, site audits, AI visibility and your Search Console data, in one
+              workspace you can run yourself, read every line of, and hand to your AI agent.
+            </p>
+
+            <div className="animate-rise mt-10 flex flex-col justify-center gap-3 [animation-delay:180ms] sm:flex-row">
+              <ButtonLink href={SIGN_UP_URL} size="lg">
+                Get started
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </ButtonLink>
+              <ButtonLink href="/docs/self-hosting" variant="secondary" size="lg">
+                Self-host with Docker
+              </ButtonLink>
+            </div>
+
+            <p className="animate-rise mt-6 text-[0.9375rem] text-muted [animation-delay:240ms]">
+              Or{' '}
+              <Link href="/tools" className="font-medium text-accent-text underline-offset-4 hover:underline">
+                try the free tools
+              </Link>
+              , no sign-up needed.
+            </p>
+          </div>
+
+          <div className="animate-rise mx-auto mt-16 max-w-4xl [animation-delay:200ms] md:mt-20">
+            <ProductMock />
+          </div>
+        </div>
+      </section>
+
+      {/* Ledger strip */}
+      <section aria-label="OpenSEO in four numbers" className="border-y border-line bg-surface">
+        <dl className="container-page grid grid-cols-2 gap-y-10 py-12 md:py-14 lg:grid-cols-4">
+          {ledger.map((item) => (
+            <div key={item.label} className="flex flex-col-reverse items-center justify-end gap-2 px-2 text-center">
+              <dt className="text-sm text-balance text-muted">{item.label}</dt>
+              <dd className="font-display text-4xl font-bold tracking-tight text-ink tabular-nums sm:text-5xl">{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      {/* Features */}
+      <section aria-labelledby="features-title" className="container-page py-20 md:py-28 xl:py-32">
+        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+          <SectionHeader
+           
+            eyebrow="Features"
+            id="features-title"
+            title="Focused workflows, not a bloated suite"
+            lede="The SEO work most sites actually do, without the hundred reports you never open. Each tool has its own page with what it does and what it costs."
+          />
+          <Link href="/features" className={`${textLink} shrink-0 self-start md:self-end`}>
+            All features
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="mt-14 md:mt-16">
+          <FeatureGrid />
+        </div>
+      </section>
+
+      {/* You are in control */}
+      <section aria-labelledby="control-title" className="border-y border-line bg-surface">
+        <div className="container-page py-20 md:py-28 xl:py-32">
+          <SectionHeader
+           
+            eyebrow="You are in control"
+            id="control-title"
+            title="Your SEO tool should answer to you"
+            lede="Closed suites decide what you see, where your data goes and what you pay. OpenSEO is built the other way round."
+          />
+          <ul className="mt-14 grid grid-cols-1 gap-x-16 gap-y-12 md:mt-16 md:grid-cols-2">
+            {control.map((item) => (
+              <li key={item.title} className="border-l-2 border-accent pl-6">
+                <h3 className="text-heading">{item.title}</h3>
+                <p className="mt-3 text-muted">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <AgentFold />
+
+      {/* Self-host */}
+      <section aria-labelledby="selfhost-title" className="border-y border-line bg-surface">
+        <div className="container-page grid grid-cols-1 gap-12 py-20 md:py-28 xl:py-32 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-20">
+          <div>
+            <SectionHeader
+             
+              eyebrow="Self-host"
+              id="selfhost-title"
+              title="Run the whole thing yourself"
+              lede="Everything this site runs is in the repository. Start it on your own machine or server with Docker, and it is yours."
+            />
+            <ul className="mt-10 space-y-4">
+              {selfHostPoints.map((point) => (
+                <li key={point} className="flex items-start gap-3.5 text-muted">
+                  <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+                    <Check className="size-3.5" aria-hidden="true" strokeWidth={3} />
+                  </span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
+              <Link href="/docs/self-hosting" className={textLink}>
+                Self-hosting guide
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+              {GITHUB_URL ? (
+                <a href={GITHUB_URL} rel="noopener" className={textLink}>
+                  Source on GitHub
+                </a>
+              ) : null}
+            </p>
+          </div>
+
+          <div className="min-w-0">
+            <CodeBlock label="Terminal" code={selfHostDocker} />
+            {GITHUB_URL ? null : (
+              <p className="mt-4 text-sm text-muted">The public repository link is not published yet. It will appear here when it is.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Where the data comes from: the one place the provider is introduced */}
+      <section aria-labelledby="data-title" className="container-page py-20 md:py-28 xl:py-32">
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-20">
+          <div>
+            <SectionHeader
+             
+              eyebrow="Search data"
+              id="data-title"
+              title="Where the data comes from"
+              lede="The crawler, the site audit and your Search Console data are free. Search data, like keyword volumes, rankings and backlinks, needs a data provider, and you pay only for the lookups you run."
+            />
+            <p className="mt-8 text-muted">
+              OpenSEO uses{' '}
+              <a href={YEPAPI_URL} rel="noopener" className={textLink}>
+                YepAPI
+              </a>{' '}
+              for search data. You add your own key when you set up your account, new accounts start with free credit,
+              and the app shows the cost of every lookup before it runs.
+            </p>
+            <p className="mt-8">
+              <Link href="/pricing" className={textLink}>
+                Costs in detail
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </p>
+          </div>
+          <div>
+            <PriceTable caption="Example costs per lookup" rows={rowsFromPricing(priceRows)} />
+            <p className="mt-5 text-sm text-faint">Example costs at the time of writing. A rank check stops at the page where your site appears.</p>
+          </div>
+        </div>
+      </section>
+
+      <CtaBand />
+    </>
+  );
+}

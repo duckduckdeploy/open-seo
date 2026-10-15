@@ -1,0 +1,347 @@
+@import 'tailwindcss';
+
+/*
+ * OpenSEO design tokens.
+ * Light values live in @theme; the dark theme overrides the same variables
+ * under prefers-color-scheme, so every utility (bg-surface, text-muted, ...)
+ * follows the system theme without dark: variants.
+ */
+@theme {
+  /* Colour: cool neutrals, one blue accent used sparingly */
+  --color-bg: #fbfcfe;
+  --color-surface: #ffffff;
+  --color-sunken: #f3f5fa;
+  --color-ink: #0d1321;
+  --color-muted: #4b5567;
+  --color-faint: #8892a5;
+  --color-line: #e3e7ef;
+  --color-edge: #cdd4e1;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-fg: #ffffff;
+  --color-accent-text: #1d4ed8;
+  --color-accent-soft: #eef3ff;
+  --color-accent-line: #c9d8fd;
+  --color-pos: #0f7b4a;
+  --color-neg: #c2321f;
+  --color-code: #0d1321;
+  --color-code-fg: #e6ebf5;
+  --color-code-muted: #8d98ad;
+  --color-code-line: #212a3b;
+
+  /* Type */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Shape: soft, consistent corners */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Elevation: soft, low shadows. (The hard-* names are kept for existing markup.) */
+  --shadow-hard-sm: 0 1px 2px rgb(13 19 33 / 0.06);
+  --shadow-hard: 0 1px 2px rgb(13 19 33 / 0.05), 0 8px 24px -8px rgb(13 19 33 / 0.12);
+  --shadow-hard-lg: 0 2px 6px rgb(13 19 33 / 0.05), 0 32px 64px -24px rgb(13 19 33 / 0.22);
+
+  --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #0a0e16;
+      --color-surface: #10151f;
+      --color-sunken: #151b27;
+      --color-ink: #e8ecf4;
+      --color-muted: #a3adbf;
+      --color-faint: #6c768a;
+      --color-line: #1f2633;
+      --color-edge: #2d3648;
+      --color-accent: #2563eb;
+      --color-accent-hover: #3b74f0;
+      --color-accent-fg: #ffffff;
+      --color-accent-text: #8ab4ff;
+      --color-accent-soft: #121d36;
+      --color-accent-line: #223a72;
+      --color-pos: #4ade94;
+      --color-neg: #ff7a66;
+      --color-code: #0b1019;
+      --color-code-fg: #e6ebf5;
+      --color-code-muted: #8590a5;
+      --color-code-line: #1d2534;
+      --shadow-hard-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+      --shadow-hard: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+      --shadow-hard-lg: 0 2px 6px rgb(0 0 0 / 0.4), 0 32px 64px -24px rgb(0 0 0 / 0.7);
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  p,
+  li,
+  dd,
+  figcaption {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      animation-delay: 0ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Page gutter + max width used by every section */
+  .container-page {
+    width: 100%;
+    max-width: 74rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 2.5rem;
+    }
+  }
+
+  /* Vertical rhythm for page sections */
+  .section {
+    padding-block: 5rem;
+  }
+
+  @media (min-width: 768px) {
+    .section {
+      padding-block: 7rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .section {
+      padding-block: 8rem;
+    }
+  }
+
+  /* Type scale. Fluid between phone and desktop, so headings never break into one-word lines. */
+  .text-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 1.7rem + 3.2vw, 4.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .text-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 1.55rem + 1.8vw, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .text-heading {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .text-lede {
+    font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.3125rem);
+    line-height: 1.6;
+    color: var(--color-muted);
+    text-wrap: pretty;
+  }
+
+  /* Small label that opens a section: sans, spaced capitals, in the accent */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent-text);
+  }
+
+  /* Emphasis in a headline: accent text that never splits across lines */
+  .mark {
+    color: var(--color-accent);
+    white-space: nowrap;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .mark {
+      color: var(--color-accent-text);
+    }
+  }
+
+
+  /* A soft blue glow behind the hero */
+  .bg-glow {
+    background:
+      radial-gradient(60rem 28rem at 78% -10%, var(--color-accent-soft), transparent 70%),
+      radial-gradient(40rem 24rem at 0% 0%, var(--color-sunken), transparent 70%);
+  }
+
+  /* Long-form text: docs and legal pages */
+  .prose-doc {
+    max-width: 44rem;
+    color: var(--color-ink);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+
+  .prose-doc > * + * {
+    margin-top: 1.35rem;
+  }
+
+  .prose-doc h2 {
+    font-size: 1.625rem;
+    line-height: 1.2;
+    margin-top: 3.5rem;
+    padding-top: 2.25rem;
+    border-top: 1px solid var(--color-line);
+    scroll-margin-top: 6rem;
+  }
+
+  .prose-doc h3 {
+    font-size: 1.1875rem;
+    line-height: 1.3;
+    margin-top: 2.5rem;
+    scroll-margin-top: 6rem;
+  }
+
+  .prose-doc h2 + *,
+  .prose-doc h3 + * {
+    margin-top: 0.875rem;
+  }
+
+  .prose-doc p,
+  .prose-doc li {
+    color: var(--color-muted);
+  }
+
+  .prose-doc strong {
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .prose-doc a {
+    color: var(--color-accent-text);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent-line);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 3px;
+    transition: text-decoration-color 150ms;
+  }
+
+  .prose-doc a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .prose-doc ul,
+  .prose-doc ol {
+    padding-left: 1.375rem;
+  }
+
+  .prose-doc ul {
+    list-style: disc;
+  }
+
+  .prose-doc ol {
+    list-style: decimal;
+  }
+
+  .prose-doc li + li {
+    margin-top: 0.5rem;
+  }
+
+  .prose-doc li::marker {
+    color: var(--color-faint);
+  }
+
+  .prose-doc :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background: var(--color-sunken);
+    border-radius: var(--radius-sm);
+    padding: 0.15em 0.4em;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+}
