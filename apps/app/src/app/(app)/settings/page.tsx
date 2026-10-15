@@ -71,7 +71,7 @@ function YepKeyCard({ settings }: { settings: Me["settings"] }) {
         <ErrorNote error={save.error ?? remove.error} />
         <p className="text-xs text-muted">
           No key yet?{" "}
-          <a href="https://yepapi.com" target="_blank" rel="noreferrer" className="font-medium text-ink underline underline-offset-2">
+          <a href="https://yepapi.com?ref=openseo" target="_blank" rel="noreferrer" className="font-medium text-ink underline underline-offset-2">
             Create a YepAPI account
           </a>{" "}
           and get $5 in free credits. The key is encrypted at rest and never shown again.
