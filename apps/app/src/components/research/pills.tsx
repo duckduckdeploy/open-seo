@@ -4,6 +4,8 @@ import { cx } from "@/components/ui";
 import type { N, S } from "./types";
 import { safeHref } from "@/lib/url";
 import { finite, urlPath } from "./util";
+import { toolLinks } from "@/lib/scope";
+import { OpenInTool } from "./tool-link";
 
 /** Keyword difficulty 0-100. The number is always shown; colour only reinforces it. */
 export function DifficultyPill({ value }: { value: N }) {
@@ -64,11 +66,14 @@ export function UrlCell({ url, full, className }: { url: S; full?: boolean; clas
   const classes = cx("inline-block max-w-72 truncate align-bottom font-mono text-xs", className);
   if (!href) return <span className={classes} title={url}>{label}</span>;
   return (
-    <a href={href} target="_blank" rel="noreferrer noopener" title={url} className={cx(classes, "text-muted underline-offset-2 hover:text-ink hover:underline")}>
-      {label}
-      <ExternalLink className="ml-1 inline size-3 align-[-1px] opacity-60" aria-hidden />
-      <span className="sr-only"> (opens in a new tab)</span>
-    </a>
+    <span className="inline-flex max-w-full items-center gap-1">
+      <a href={href} target="_blank" rel="noreferrer noopener" title={url} className={cx(classes, "text-muted underline-offset-2 hover:text-ink hover:underline")}>
+        {label}
+        <ExternalLink className="ml-1 inline size-3 align-[-1px] opacity-60" aria-hidden />
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+      <OpenInTool href={toolLinks.page(url)} label={`Analyse page ${url}`} />
+    </span>
   );
 }
 

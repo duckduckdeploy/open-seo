@@ -275,6 +275,38 @@ export const lookups: Lookup[] = [
     },
   }),
   define({
+    name: "url_metrics",
+    title: "Page and domain authority",
+    description:
+      "For up to 10 URLs (or domains): the page's URL Rating, backlinks, referring domains, organic traffic and keywords, and the site's Domain Rating. $0.02 per URL. Use it on the top results of a SERP.",
+    feature: "serp",
+    ttl: 7 * DAY,
+    input: z.object({ urls: z.array(target).min(1).max(10) }),
+    estimate: (i) => {
+      const each = estimateCost("/v1/seo/domain/metrics", { domain: i.urls[0] ?? "" });
+      return { min: sum(...i.urls.map(() => each.min)), max: sum(...i.urls.map(() => each.max ?? each.min)), formula: `$${each.min.toFixed(2)} per URL` };
+    },
+    run: async (yep, i) => {
+      // Each URL is billed separately; failed ones are reported, the rest returned (and not cached).
+      const results = await mapLimit(i.urls, 4, async (url) => {
+        try {
+          const res = await yep.domain.metrics({ domain: url });
+          return { url, page: res.data.page ?? null, domain: res.data.domainMetrics ?? null, costUsd: res.costUsd };
+        } catch (error) {
+          return { url, page: null, domain: null, costUsd: 0, error: errorText(error), reason: error };
+        }
+      });
+      const failed = results.filter((row) => "error" in row);
+      // All failed: the first error as it came, so a bad key or empty balance reads as such.
+      if (failed.length === results.length && failed[0]) throw failed[0].reason;
+      return {
+        data: { urls: results.map(({ costUsd: _cost, reason: _reason, ...row }) => row) },
+        costUsd: sum(...results.map((row) => row.costUsd)),
+        partial: failed.length > 0,
+      };
+    },
+  }),
+  define({
     name: "domain_pages",
     title: "Top pages",
     description: "A domain's pages ranked by estimated organic traffic, with keyword counts and top-3 / top-10 counts.",

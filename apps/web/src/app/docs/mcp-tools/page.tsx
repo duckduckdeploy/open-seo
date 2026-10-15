@@ -15,7 +15,7 @@ export default function McpToolsPage() {
   return (
     <DocArticle slug={slug}>
       <p>
-        The MCP server at <code>{'{API_URL}'}/mcp</code> offers 60 tools. Each one calls the same REST route the
+        The MCP server at <code>{'{API_URL}'}/mcp</code> offers 61 tools. Each one calls the same REST route the
         dashboard uses, with the caller&apos;s API key, so validation, prices, caching and limits are identical. Most
         tools take an optional <code>project_id</code>; leave it out when the account has one project. With no project
         at all, paid lookups run on their own in the market their input names (the United States by default).
@@ -54,7 +54,7 @@ export default function McpToolsPage() {
 
       <h2 id="lookups">Paid lookups</h2>
       <p>
-        The 24 lookups share their names with the REST <code>/lookups/:name</code> routes. Their inputs are listed in
+        The 25 lookups share their names with the REST <code>/lookups/:name</code> routes. Their inputs are listed in
         each tool&apos;s schema. Prices are YepAPI&apos;s; &quot;per 100&quot; prices are billed on rows returned, so
         the figure for the default size is the most it can cost.
       </p>
@@ -71,6 +71,7 @@ export default function McpToolsPage() {
           ['domain_overview', 'Traffic and totals, ranking distribution and authority for a domain.', '$0.14 ($0.08 totals only)'],
           ['domain_keywords', 'Keywords a domain ranks for; filter by position or URL path.', '$0.03 + $0.03/100'],
           ['domain_pages', "A domain's pages by estimated traffic.", '$0.03 + $0.03/100'],
+          ['url_metrics', 'URL Rating, backlinks, referring domains, traffic and keywords of up to 10 pages, with each site’s Domain Rating.', '$0.02 per URL'],
           ['competitors_domain', 'Domains ranking for the same keywords.', '$0.03 + $0.03/100'],
           ['competitors_serp', 'Domains ranking most for up to 200 keywords.', '$0.03 + $0.03/100'],
           ['keyword_gap', "Keywords a competitor has and you don't, or that you share.", '$0.03 + $0.03/100'],

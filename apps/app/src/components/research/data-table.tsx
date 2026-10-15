@@ -106,7 +106,7 @@ export function DataTable<T>({ rows, columns, rowKey, caption, initialSort = nul
   if (rows.length === 0 && empty) return <div className="px-4 py-10 text-center text-sm text-muted">{empty}</div>;
 
   return (
-    <div className={cx("max-h-[72vh] overflow-auto", className)} tabIndex={0} role="region" aria-label={caption}>
+    <div className={cx("relative max-h-[72vh] overflow-auto", className)} tabIndex={0} role="region" aria-label={caption}>
       <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
         <caption className="sr-only">{caption}</caption>
         <thead>

@@ -236,3 +236,31 @@ describe("standalone lookups", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("url metrics", () => {
+  it("prices per URL, returns page and domain authority, and reports URLs that failed", async () => {
+    const { api } = await signUp();
+    await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const urls = ["https://acme.com/a", "https://b.com/", "c.com"];
+    expect(await api.ok("POST", "/lookups/url_metrics?dryRun=1", { urls })).toMatchObject({ estimate: { min: 0.06, max: 0.06 } });
+
+    const before = harness.fake.requests.length;
+    harness.fake.failures.set("/v1/seo/domain/metrics", [{ status: 500, code: "UPSTREAM" }]);
+    const ran = await api.ok("POST", "/lookups/url_metrics", { urls });
+    harness.fake.failures.delete("/v1/seo/domain/metrics");
+    expect(callsTo("/v1/seo/domain/metrics", before).length).toBeGreaterThanOrEqual(3);
+    const rows = ran.data.urls as { url: string; page: { urlRating: number } | null; domain: { domainRating: number } | null; error?: string }[];
+    expect(rows.map((r) => r.url)).toEqual(urls);
+    expect(rows.filter((r) => r.error)).toHaveLength(1);
+    expect(rows.find((r) => !r.error)).toMatchObject({ page: { urlRating: 34 }, domain: { domainRating: 57 } });
+    // A partial result is not cached: asking again calls YepAPI again.
+    expect((await api.ok("POST", "/lookups/url_metrics", { urls })).cached).toBe(false);
+  });
+
+  it("refuses more than 10 URLs before spending", async () => {
+    const { api } = await signUp();
+    await api.ok("PUT", "/settings/yepapi-key", { apiKey: YEP_KEY });
+    const res = await api.post("/lookups/url_metrics", { urls: Array.from({ length: 11 }, (_, i) => `site${i}.com`) });
+    expect(res.status).toBe(400);
+  });
+});

@@ -253,7 +253,7 @@ export default function McpPage() {
       <h2 id="verify">Check it works</h2>
       <p>
         Ask your agent to call <code>whoami</code> and <code>list_projects</code>. Both are free. If they work, the agent
-        sees all 60 tools, listed with their prices in <Link href="/docs/mcp-tools">MCP tools</Link>.
+        sees all 61 tools, listed with their prices in <Link href="/docs/mcp-tools">MCP tools</Link>.
       </p>
 
       <Callout tone="cost" title="How agents spend">

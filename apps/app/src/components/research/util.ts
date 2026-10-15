@@ -105,3 +105,15 @@ export function splitLines(value: string, { commas = false }: { commas?: boolean
   const parts = value.split(commas ? /[\n,]+/ : /\n+/).map((part) => part.trim()).filter(Boolean);
   return [...new Set(parts)];
 }
+
+/**
+ * Share of searches that click an organic result at positions 1 to 10: a typical desktop curve
+ * from public click-through studies. Used only to estimate visits, and labelled as an estimate.
+ */
+const CTR = [0.28, 0.15, 0.11, 0.08, 0.07, 0.05, 0.04, 0.03, 0.03, 0.025];
+
+export const estimatedVisits = (volume: N, position: N) =>
+  finite(volume) && finite(position) && position >= 1 && position <= CTR.length ? Math.round(volume * (CTR[position - 1] as number)) : null;
+
+const QUESTION = /^(how|what|why|when|where|which|who|whose|can|could|does|do|did|is|are|was|should|will|would)\b/i;
+export const isQuestion = (keyword: string) => QUESTION.test(keyword.trim()) || keyword.trim().endsWith("?");

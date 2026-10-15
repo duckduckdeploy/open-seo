@@ -206,3 +206,27 @@ export type GapKeyword = {
 };
 /** mode=gap: domain1 is the competitor. mode=shared: domain1 is you, domain2 the competitor. */
 export type KeywordGapData = { mode?: "gap" | "shared"; domain1?: string; domain2?: string; keywords?: GapKeyword[] | null };
+
+export type UrlMetricsRow = {
+  url: string;
+  page: { backlinks?: N; refDomains?: N; traffic?: N; trafficValue?: N; organicKeywords?: N; urlRating?: N; numberOfWordsOnPage?: N } | null;
+  domain: { domainRating?: N; ahrefsRank?: N; domainRank?: N; backlinks?: N; refDomains?: N; traffic?: N; trafficValue?: N; organicKeywords?: N } | null;
+  error?: string;
+};
+export type UrlMetricsData = { urls?: UrlMetricsRow[] | null };
+export type UrlMetricsInput = { urls: string[] };
+
+export type OnPageData = {
+  pages?: {
+    url?: S;
+    statusCode?: N;
+    title?: S;
+    description?: S;
+    h1?: string[] | null;
+    wordCount?: N;
+    internalLinks?: N;
+    externalLinks?: N;
+    images?: N;
+    timeToInteractive?: N;
+  }[] | null;
+};

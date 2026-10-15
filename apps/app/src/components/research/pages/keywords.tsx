@@ -321,7 +321,7 @@ export function KeywordResearch({ project }: { project: Project }) {
         </Card>
       )}
 
-      {panel && <SerpPanel projectId={project.id} keyword={panel} market={ranMarket} locationCode={resultLocation} onClose={() => setPanel(null)} />}
+      {panel && <SerpPanel project={project} keyword={panel} market={ranMarket} locationCode={resultLocation} onClose={() => setPanel(null)} />}
     </>
   );
 }

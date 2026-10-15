@@ -28,7 +28,7 @@ const textLink =
 const ledger = [
   { value: 'MIT', label: 'Open-source licence' },
   { value: '1', label: 'Docker command to self-host' },
-  { value: '60', label: 'MCP tools for your AI agent' },
+  { value: '61', label: 'MCP tools for your AI agent' },
   { value: String(AUDIT_CHECKS), label: 'Site audit checks, free' },
 ];
 

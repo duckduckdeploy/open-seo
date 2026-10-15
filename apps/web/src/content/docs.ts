@@ -105,7 +105,7 @@ export const docPages: DocPage[] = [
   {
     slug: 'mcp-tools',
     title: 'MCP tools',
-    description: 'All 60 tools the MCP server offers, what each one does, and which ones spend.',
+    description: 'All 61 tools the MCP server offers, what each one does, and which ones spend.',
     section: 'Reference',
   },
   {

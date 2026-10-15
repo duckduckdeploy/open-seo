@@ -83,4 +83,5 @@ export const toolLinks = {
   domain: (domain: string, market?: Market) => `/tools/domain-overview${qs({ domain, ...marketParams(market) })}`,
   backlinks: (target: string) => `/tools/backlink-checker${qs({ target })}`,
   serp: (keyword: string, market?: Market) => `/tools/serp-checker${qs({ q: keyword, ...marketParams(market) })}`,
+  page: (url: string) => `/tools/page-analyser${qs({ url })}`,
 };
