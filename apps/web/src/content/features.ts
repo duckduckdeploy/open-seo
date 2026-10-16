@@ -62,7 +62,7 @@ export const features: Feature[] = [
     icon: ChartLine,
     what: [
       'Track where your site ranks on Google for the keywords you care about, on desktop and mobile, from a country, a city or an exact pair of coordinates.',
-      'A check stops at the results page where your site appears. A keyword you rank for on page one costs $0.01 to check, and you are not billed for pages nobody needed to fetch.',
+      'Every check reads the top 100 results, so you see your position wherever it is, and every competitor around you. Checks run in the background on the schedule you pick, or right away when you click.',
     ],
     capabilities: [
       {
@@ -74,8 +74,8 @@ export const features: Feature[] = [
         body: 'Check from a country, a city or exact coordinates.',
       },
       {
-        title: 'Schedules you choose',
-        body: 'Run checks daily, weekly or monthly. The schedule decides how often you pay for a check.',
+        title: 'Schedules you choose, or now',
+        body: 'Checks run daily, weekly or monthly in the background, and any time you click Check rankings now.',
       },
       {
         title: 'Competitor positions',
@@ -86,8 +86,8 @@ export const features: Feature[] = [
         body: 'See which SERP features appear on the results page for each keyword.',
       },
       {
-        title: 'Checks that stop early',
-        body: 'A check stops at the page where your site appears, so page-one keywords stay at $0.01.',
+        title: 'The full top 100',
+        body: 'Every check reads 10 pages of results, so a keyword on page four is tracked as closely as one on page one.',
       },
       {
         title: 'History that stays',
@@ -95,16 +95,15 @@ export const features: Feature[] = [
       },
     ],
     facts: [
-      { value: '$0.01', label: 'page-one check' },
+      { value: '100', label: 'results per check' },
       { value: '2', label: 'devices' },
       { value: '3', label: 'schedules' },
     ],
     costs: [
-      { action: 'Rank check', unit: 'One keyword, found on page one', price: '$0.01' },
-      { action: 'Rank check', unit: 'One keyword, found on a later page', price: null },
+      { action: 'Rank check', unit: 'One keyword and device, the top 100 results', price: '$0.10' },
     ],
     costNote:
-      'Rank checks start at $0.01. A check stops at the page where your site appears, so the price depends on how deep it has to look.',
+      '100 keywords on desktop cost $10 a run: about $43 a month checked weekly, or $300 checked daily.',
   },
   {
     slug: 'search-performance',

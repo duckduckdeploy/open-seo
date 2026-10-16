@@ -40,13 +40,12 @@ export default function CostsPage() {
         the error is shown and you decide whether to try again. Free calls, such as the balance, are retried as usual.
       </p>
 
-      <h3 id="rank-price">Rank checks stop where you are found</h3>
+      <h3 id="rank-price">Rank checks read the top 100</h3>
       <p>
-        A rank check asks for results one page of 10 at a time and stops at the page where your site appears. A keyword
-        you rank for on page one costs $0.01; one you are not found for costs the full depth you chose ($0.03 for a top
-        30 check). Desktop and mobile are separate checks. So a run costs between{' '}
-        <code>keywords × devices × $0.01</code> and <code>keywords × devices × depth / 10 × $0.01</code>, and the
-        tracker shows both figures, per run and per month.
+        Every rank check reads the top 100 Google results, 10 pages at $0.01 each, so it records your position wherever
+        it is and the full field of competitors. A check costs $0.10 per keyword and device; desktop and mobile are
+        separate checks. A run costs <code>keywords × devices × $0.10</code>, and the tracker shows it per run and per
+        month on its schedule.
       </p>
 
       <h3 id="ai-price">AI answers have no fixed price</h3>

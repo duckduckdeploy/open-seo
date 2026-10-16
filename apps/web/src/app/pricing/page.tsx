@@ -13,7 +13,7 @@ import { SIGN_UP_URL, YEPAPI_URL } from '@/lib/site';
 export const metadata = pageMeta({
   title: 'Pricing',
   description:
-    'OpenSEO is open source and free to self-host. Search data is billed per lookup, shown before it runs: rank checks from $0.01, keyword research about $0.08.',
+    'OpenSEO is open source and free to self-host. Search data is billed per lookup, shown before it runs: a rank check of the top 100 $0.10, keyword research about $0.08.',
   path: '/pricing',
 });
 
@@ -94,8 +94,7 @@ export default function PricingPage() {
               for current rates.
             </li>
             <li>
-              A rank check stops at the results page where your site appears, so a keyword you rank for on page one
-              costs $0.01.
+              A rank check reads the top 100 results, 10 pages at $0.01, so it costs $0.10 per keyword and device.
             </li>
             <li>A 5×5 geo-grid runs 25 Maps searches at $0.07 each, which comes to $1.75.</li>
           </ul>

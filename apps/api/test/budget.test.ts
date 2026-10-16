@@ -58,18 +58,18 @@ describe("monthly budget", () => {
       schedule: "manual",
       keywords: Array.from({ length: 30 }, (_, i) => `budget keyword ${i}`),
     });
-    await api.ok("PUT", "/settings/budget", { monthlyBudgetUsd: 0.05 });
+    await api.ok("PUT", "/settings/budget", { monthlyBudgetUsd: 0.25 });
     const run = await api.ok("POST", `/trackers/${tracker.id}/runs`);
     await processRankRun(run.id);
 
     const [stored] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, run.id));
     expect(stored?.status).toBe("failed");
     expect(stored?.error).toMatch(/spending limit/);
-    // Checks already in flight (four at a time) may complete, so the month ends at most a few cents over.
-    await settled(userId, 0.05);
+    // Checks already in flight (four at a time, $0.10 each) may complete, so the month ends a little over.
+    await settled(userId, 0.25);
     const spent = await monthSpend(userId);
-    expect(spent).toBeGreaterThanOrEqual(0.05);
-    expect(spent).toBeLessThan(0.05 + 4 * 0.02 + 1e-9);
+    expect(spent).toBeGreaterThanOrEqual(0.25);
+    expect(spent).toBeLessThan(0.25 + 4 * 0.1 + 1e-9);
     expect(stored?.done).toBeLessThan(30);
   });
 });

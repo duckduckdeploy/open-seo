@@ -77,7 +77,7 @@ Every tool is one search: type a keyword, domain or URL, pick a country (and a c
 | 🔎 [Keyword overview](https://openseo.gg/tools/keyword-overview) | Difficulty, volume, traffic potential, volume by country, ideas and the live top 10 for one keyword, down to a city |
 | 💡 [Keyword ideas](https://openseo.gg/tools/keyword-ideas) | Matching terms, related searches, questions and suggestions with volume, CPC, difficulty, intent and trend; saved lists with tags |
 | 📋 [SERP checker](https://openseo.gg/tools/serp-checker) | The live top 10 on desktop or mobile, with each result's DR, UR, links and traffic |
-| 📍 Rank tracking | Google positions on desktop and mobile, by country, city or exact coordinates, on a schedule. Checks stop at the page where you appear. History survives removing a keyword |
+| 📍 Rank tracking | Google positions on desktop and mobile, by country, city or exact coordinates, on a schedule. Every check reads the top 100, in the background on a schedule or on demand. History survives removing a keyword |
 | 📊 Search performance | Search Console and GA4: totals against the previous period, striking-distance queries, organic landing pages, opportunity scores |
 | 🌐 [Domain overview](https://openseo.gg/tools/domain-overview) | Estimated traffic, ranking distribution, top keywords, top pages, competitors |
 | 📄 [Page analyser](https://openseo.gg/tools/page-analyser) | One page's authority, links, traffic, on-page checks, keywords and backlinks |

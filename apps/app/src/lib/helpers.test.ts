@@ -5,9 +5,9 @@ import { compact, usd } from "./api";
 import { compareValues, hostOf, safeHref } from "./url";
 
 describe("prices shown before a run", () => {
-  it("prices a rank run from one page per check to the full depth", () => {
-    expect(runPrice(100, 2, 30)).toEqual({ checks: 200, min: 2, max: 6 });
-    expect(runPrice(3, 1, 10)).toEqual({ checks: 3, min: 0.03, max: 0.03 });
+  it("prices a rank run at the top 100 for every keyword and device", () => {
+    expect(runPrice(100, 2)).toEqual({ checks: 200, min: 20, max: 20 });
+    expect(runPrice(3, 1)).toEqual({ checks: 3, min: 0.3, max: 0.3 });
   });
 
   it("projects a monthly price from the schedule", () => {

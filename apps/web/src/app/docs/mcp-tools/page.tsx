@@ -113,7 +113,7 @@ export default function McpToolsPage() {
           ['list_rank_trackers', 'Trackers with keyword counts, schedule, last run and the price range of a check.', 'free'],
           ['create_rank_tracker', 'Create a tracker for a location or exact point.', 'free'],
           ['add_rank_keywords', 'Add keywords to a tracker. A keyword removed earlier comes back with its history.', 'free'],
-          ['run_rank_check', 'Check every keyword now, in the background. Requires max_cost_usd.', '$0.01 per page fetched'],
+          ['run_rank_check', 'Check every keyword now (the top 100), in the background. Requires max_cost_usd.', '$0.10 per keyword and device'],
           ['get_rank_results', 'Positions, changes, ranking URLs, SERP features and recent history.', 'free'],
           ['get_rank_competitors', 'Domains most often in the top 10, from the latest check.', 'free'],
         ]}

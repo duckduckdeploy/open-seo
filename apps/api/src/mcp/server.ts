@@ -187,7 +187,7 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
   );
   tool(
     "create_rank_tracker",
-    "Create a Google rank tracker for a domain in one location. Creating it spends nothing; checks are billed $0.01 per results page fetched and stop at the page where the domain appears.",
+    "Create a Google rank tracker for a domain in one location. Creating it spends nothing; every check reads the top 100 results and costs $0.10 per keyword and device.",
     {
       project_id: projectId,
       domain: z.string().min(3),
@@ -197,7 +197,6 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
       longitude: z.number().optional(),
       language: z.string().optional(),
       devices: z.array(z.enum(["desktop", "mobile"])).min(1).max(2).optional(),
-      depth: z.number().int().min(10).max(100).optional().describe("How deep to look, in results. Multiples of 10. Default 20."),
       schedule: z.enum(["manual", "daily", "weekly", "monthly"]).optional(),
       keywords: z.array(z.string()).max(1000).optional(),
     },
@@ -210,7 +209,6 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
         longitude: a.longitude,
         language: a.language,
         devices: a.devices,
-        depth: a.depth,
         schedule: a.schedule,
         keywords: a.keywords,
       }),
@@ -223,7 +221,7 @@ function buildServer(app: FastifyInstance, authorization: string): McpServer {
   );
   tool(
     "run_rank_check",
-    "Check every keyword in a tracker now. Runs in the background; poll get_rank_results. Price range is in list_rank_trackers (estimate.min to estimate.max).",
+    "Check every keyword in a tracker now. Runs in the background; poll get_rank_results. Each keyword and device costs $0.10 (the top 100 results); the total is in list_rank_trackers (estimate).",
     { tracker_id: z.string().uuid(), max_cost_usd: maxCost },
     async (a) => {
       const tracker = (await rest("GET", `/trackers/${a.tracker_id}`)) as { estimate: { max: number } };

@@ -29,7 +29,7 @@ const sharedFaqs: Faq[] = [
   {
     question: 'What does OpenSEO actually cost?',
     answer: [
-      'The software is open source and free to self-host. Search data is paid per lookup, at the price shown before it runs: about $0.08 for a keyword search of 150 ideas, $0.01 for a rank check that finds you on page one. A small site tracking 100 keywords weekly spends a few dollars a month.',
+      'The software is open source and free to self-host. Search data is paid per lookup, at the price shown before it runs: about $0.08 for a keyword search of 150 ideas, $0.10 for a rank check of the top 100. Tracking 100 keywords weekly on desktop costs about $43 a month.',
     ],
   },
 ];
@@ -50,7 +50,7 @@ export const comparisons: Comparison[] = [
       { topic: 'Price model', them: 'Monthly plan from $129; usage counted in credits', us: 'Open-source software; data paid per lookup, from $0.01' },
       { topic: 'Users', them: 'Paid per seat beyond the first', us: 'No seats: self-host it for your whole team' },
       { topic: 'Keyword and backlink data', them: 'Own crawler and index, among the largest', us: 'A large commercial dataset, through a data provider' },
-      { topic: 'Rank tracking', them: '750 tracked keywords on Lite', us: 'Per check: $0.01 per results page fetched, stops at your page' },
+      { topic: 'Rank tracking', them: '750 tracked keywords on Lite', us: '$0.10 per keyword and device for the top 100, on your schedule or on demand' },
       { topic: 'AI agents', them: 'Check their current plans', us: '63 MCP tools and a REST API on every install, spending capped per call' },
     ],
     chooseThem: [
@@ -85,7 +85,7 @@ export const comparisons: Comparison[] = [
       { topic: 'Price model', them: 'Monthly plan from $139.95', us: 'Open-source software; data paid per lookup, from $0.01' },
       { topic: 'Scope', them: 'SEO plus ads, content, social and more', us: 'SEO: keywords, ranks, backlinks, audits, AI visibility, local' },
       { topic: 'Keyword and backlink data', them: 'Own databases with long history', us: 'A large commercial dataset, through a data provider' },
-      { topic: 'Rank tracking', them: '500 tracked keywords on Pro', us: 'Per check: $0.01 per results page fetched, stops at your page' },
+      { topic: 'Rank tracking', them: '500 tracked keywords on Pro', us: '$0.10 per keyword and device for the top 100, on your schedule or on demand' },
       { topic: 'AI agents', them: 'Check their current plans', us: '63 MCP tools and a REST API on every install, spending capped per call' },
     ],
     chooseThem: [

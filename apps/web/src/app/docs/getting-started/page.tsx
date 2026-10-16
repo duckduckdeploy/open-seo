@@ -50,7 +50,7 @@ export default function GettingStartedPage() {
       </p>
       <p>As a guide, $5 of credit covers roughly one of these:</p>
       <ul>
-        <li>about 500 rank checks for keywords you rank for on page one, or</li>
+        <li>about 50 rank checks of the top 100, or</li>
         <li>about 60 keyword research runs of 150 results, or</li>
         <li>about 80 backlink lookups of 100 rows.</li>
       </ul>

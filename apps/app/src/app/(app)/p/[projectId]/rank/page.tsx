@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { LocationPicker, type LocationChoice } from "@/components/location-picker";
 import { Check, Group, lines, SCHEDULES, type Schedule, Segmented, usdRange } from "@/components/tracking/kit";
-import { DEPTHS, DEVICES, type Device, monthlyPrice, monthlyText, runPrice, type Tracker, type TrackerRow, whereText } from "@/components/tracking/rank";
+import { DEVICES, type Device, monthlyPrice, monthlyText, runPrice, type Tracker, type TrackerRow, whereText } from "@/components/tracking/rank";
 import { Badge, Button, Card, CardHeader, EmptyState, ErrorNote, Field, Input, PageHeader, Select, Spinner, Table, Textarea } from "@/components/ui";
 import { api, dateTime, num } from "@/lib/api";
 import { type Project, useProject } from "@/lib/hooks";
@@ -26,7 +26,6 @@ function NewTracker({ project, onDone }: { project: Project; onDone: () => void 
   const [pointLabel, setPointLabel] = useState("");
   const [language, setLanguage] = useState(project.language || "en");
   const [devices, setDevices] = useState<Device[]>(["desktop"]);
-  const [depth, setDepth] = useState(20);
   const [schedule, setSchedule] = useState<Schedule>("weekly");
   const [text, setText] = useState("");
 
@@ -34,7 +33,7 @@ function NewTracker({ project, onDone }: { project: Project; onDone: () => void 
   const lat = Number(latitude);
   const lng = Number(longitude);
   const pointValid = latitude.trim() !== "" && longitude.trim() !== "" && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  const price = runPrice(keywords.length, devices.length, depth);
+  const price = runPrice(keywords.length, devices.length);
   const monthly = monthlyPrice(price, schedule);
   const tooMany = keywords.length > MAX_KEYWORDS;
   const ready = domain.trim().length >= 3 && devices.length > 0 && !tooMany && (mode === "place" || pointValid);
@@ -47,7 +46,6 @@ function NewTracker({ project, onDone }: { project: Project; onDone: () => void 
           domain: domain.trim(),
           language,
           devices,
-          depth,
           schedule,
           keywords: keywords.length ? keywords : undefined,
           ...(mode === "point"
@@ -135,21 +133,6 @@ function NewTracker({ project, onDone }: { project: Project; onDone: () => void 
             ))}
           </Select>
         </Field>
-
-        <div className="sm:col-span-2">
-          <Field
-            label="Depth"
-            hint="A check stops at the page where your site appears, so it costs $0.01 per results page fetched, up to depth/10 pages when the site isn't found."
-          >
-            <Select value={depth} onChange={(event) => setDepth(Number(event.target.value))} className="sm:max-w-56">
-              {DEPTHS.map((option) => (
-                <option key={option} value={option}>
-                  Top {option} ({option / 10} {option === 10 ? "page" : "pages"})
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
 
         <div className="sm:col-span-2">
           <Field label="Keywords" hint={`One per line, up to ${num(MAX_KEYWORDS)}. You can add more later.`}>
@@ -243,7 +226,6 @@ export default function RankPage() {
                 <th scope="col">Tracker</th>
                 <th scope="col">Location</th>
                 <th scope="col">Devices</th>
-                <th scope="col" className="text-right">Depth</th>
                 <th scope="col">Schedule</th>
                 <th scope="col" className="text-right">Keywords</th>
                 <th scope="col">Last run</th>
@@ -262,7 +244,6 @@ export default function RankPage() {
                   </td>
                   <td className="min-w-40 text-muted">{whereText(tracker)}</td>
                   <td className="whitespace-nowrap capitalize">{tracker.devices.join(" + ")}</td>
-                  <td className="text-right font-mono tabular">{tracker.depth}</td>
                   <td className="capitalize">{tracker.schedule}</td>
                   <td className="text-right font-mono tabular">{num(tracker.keywordCount)}</td>
                   <td className="whitespace-nowrap">

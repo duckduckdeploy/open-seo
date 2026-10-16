@@ -1,10 +1,9 @@
-import { RUNS_PER_MONTH } from "@openseo/shared";
+import { RUNS_PER_MONTH, RANK_CHECK_USD } from "@openseo/shared";
 import { usd } from "@/lib/api";
 import type { RunStatus, Schedule } from "./kit";
 
 export type Device = "desktop" | "mobile";
 export const DEVICES: Device[] = ["desktop", "mobile"];
-export const DEPTHS = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
 export type RankEstimate = { checks: number; min: number; max: number };
 
@@ -103,10 +102,11 @@ export type KeywordHistory = {
 
 const round = (value: number) => Math.round(value * 100) / 100;
 
-/** A check costs $0.01 per results page fetched and stops at the page where the site appears. */
-export function runPrice(keywords: number, devices: number, depth: number) {
+/** Every check reads the top 100 Google results (10 pages at $0.01): $0.10 per keyword and device. */
+export function runPrice(keywords: number, devices: number) {
   const checks = keywords * devices;
-  return { checks, min: round(checks * 0.01), max: round(checks * 0.01 * Math.ceil(depth / 10)) };
+  const cost = round(checks * RANK_CHECK_USD);
+  return { checks, min: cost, max: cost };
 }
 
 export function monthlyPrice(estimate: { min: number; max: number }, schedule: Schedule) {

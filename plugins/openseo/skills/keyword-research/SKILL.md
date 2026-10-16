@@ -28,4 +28,4 @@ description: Find keywords worth targeting from a seed topic, group them into to
    - one line on the page that would serve it
 5. **Choose.** Rank the clusters by fit with the business goal, then by volume against difficulty. Recommend three to five to start with, and say why.
 6. **Save.** With the user's go-ahead, save the chosen keywords with `save_keywords`. Pass the metrics you already have, and tags by cluster, for example `topic:drain-cleaning`.
-7. **Next.** Offer to track them: `create_rank_tracker` plus `add_rank_keywords` are free to set up, and a check costs about $0.01 per keyword found on page one.
+7. **Next.** Offer to track them: `create_rank_tracker` plus `add_rank_keywords` are free to set up, and a check costs $0.10 per keyword and device (the top 100 results).

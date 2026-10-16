@@ -1,3 +1,4 @@
+import { RANK_CHECK_USD, RANK_DEPTH } from "@openseo/shared";
 import type { GoogleSerpData } from "@openseo/yepapi";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "../db";
@@ -21,14 +22,11 @@ export async function requireTracker(userId: string, trackerId: string) {
   return row;
 }
 
-/**
- * With stop_at_domain a check is billed $0.01 per results page fetched, so a keyword on page one
- * costs $0.01 and a keyword that is not found costs the full depth.
- */
-export function estimateRun(tracker: Pick<Tracker, "depth" | "devices">, keywordCount: number) {
+/** Every check reads the top 100 (10 pages at $0.01), so each keyword and device costs $0.10. */
+export function estimateRun(tracker: Pick<Tracker, "devices">, keywordCount: number) {
   const checks = keywordCount * tracker.devices.length;
-  const round = (v: number) => Math.round(v * 100) / 100;
-  return { checks, min: round(checks * 0.01), max: round(checks * 0.01 * Math.ceil(tracker.depth / 10)) };
+  const cost = Math.round(checks * RANK_CHECK_USD * 100) / 100;
+  return { checks, min: cost, max: cost };
 }
 
 export type ParsedSerp = {
@@ -157,13 +155,14 @@ export async function processRankRun(runId: string) {
     try {
       const res = await yep.serp.google({
         query: keyword.keyword,
-        depth: tracker.depth,
+        // The whole top 100, never stopping at the site: positions beyond it and the full
+        // competitor picture are part of what a rank tracker records.
+        depth: RANK_DEPTH,
         device,
         language: tracker.language,
-        stop_at_domain: tracker.domain,
         ...where,
       });
-      const parsed = parseSerp(res.data, tracker.domain, tracker.depth);
+      const parsed = parseSerp(res.data, tracker.domain, RANK_DEPTH);
       await db.insert(schema.rankResults).values({ ...base, ...parsed, costUsd: res.costUsd });
       await db
         .update(schema.rankRuns)

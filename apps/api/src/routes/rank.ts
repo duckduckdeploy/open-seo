@@ -1,3 +1,4 @@
+import { RANK_DEPTH } from "@openseo/shared";
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
@@ -22,7 +23,6 @@ const trackerInput = z.object({
   longitude: z.number().min(-180).max(180).nullable().optional(),
   language: z.string().min(2).max(10).default("en"),
   devices: z.array(device).min(1).max(2).default(["desktop"]),
-  depth: z.number().int().min(10).max(100).multipleOf(10).default(20),
   schedule: schedule.default("weekly"),
   keywords: keywordList.optional(),
 });
@@ -69,7 +69,7 @@ export async function rankRoutes(app: FastifyInstance) {
         longitude: hasPoint ? input.longitude : null,
         language: input.language,
         devices: [...new Set(input.devices)],
-        depth: input.depth,
+        depth: RANK_DEPTH,
         schedule: input.schedule,
         // Scheduled trackers wait for the first manual or scheduled run; nothing is spent on creation.
         nextRunAt: firstRunAt(input.schedule),
@@ -105,7 +105,6 @@ export async function rankRoutes(app: FastifyInstance) {
       z.object({
         name: z.string().trim().min(1).max(120).optional(),
         devices: z.array(device).min(1).max(2).optional(),
-        depth: z.number().int().min(10).max(100).multipleOf(10).optional(),
         schedule: schedule.optional(),
       }),
       request.body,

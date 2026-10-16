@@ -245,7 +245,7 @@ export default function HomePage() {
         </p>
         <div className="mx-auto mt-12 max-w-3xl">
           <PriceTable caption="Example costs per lookup" rows={rowsFromPricing(priceRows)} />
-          <p className="mt-5 text-center text-sm text-faint">Example costs at the time of writing. A rank check stops at the page where your site appears.</p>
+          <p className="mt-5 text-center text-sm text-faint">Example costs at the time of writing. A rank check reads the top 100 results.</p>
         </div>
         <p className="mt-10 text-center">
           <Link href="/pricing" className={textLink}>

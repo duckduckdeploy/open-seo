@@ -216,7 +216,8 @@ export const rankTrackers = pgTable(
     longitude: doublePrecision("longitude"),
     language: text("language").notNull().default("en"),
     devices: text("devices").array().$type<Device[]>().notNull().default(sql`'{desktop}'::text[]`),
-    depth: integer("depth").notNull().default(20),
+    // Every check reads the top 100 (RANK_DEPTH); kept for the record.
+    depth: integer("depth").notNull().default(100),
     schedule: text("schedule").$type<Schedule>().notNull().default("weekly"),
     nextRunAt: timestamp("next_run_at", { withTimezone: true }),
     createdAt: createdAt(),

@@ -32,7 +32,6 @@ import {
 } from "@/components/tracking/kit";
 import {
   type CompetitorRow,
-  DEPTHS,
   DEVICES,
   type Device,
   featureLabel,
@@ -228,7 +227,7 @@ function AddKeywords({ tracker, onDone }: { tracker: TrackerDetail; onDone: () =
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
   const keywords = lines(text, true);
-  const extra = runPrice(keywords.length, tracker.devices.length, tracker.depth);
+  const extra = runPrice(keywords.length, tracker.devices.length);
   const room = 1000 - tracker.keywordCount;
   const add = useMutation({
     mutationFn: () => api<{ added: number; skipped: number }>(`/trackers/${tracker.id}/keywords`, { method: "POST", body: { keywords } }),
@@ -642,14 +641,13 @@ function SettingsTab({ tracker, projectId }: { tracker: TrackerDetail; projectId
   const router = useRouter();
   const queryClient = useQueryClient();
   const [devices, setDevices] = useState<Device[]>(tracker.devices);
-  const [depth, setDepth] = useState(tracker.depth);
   const [schedule, setSchedule] = useState<Schedule>(tracker.schedule);
   const [confirming, setConfirming] = useState(false);
-  const price = runPrice(tracker.keywordCount, devices.length, depth);
-  const dirty = depth !== tracker.depth || schedule !== tracker.schedule || devices.join() !== tracker.devices.join();
+  const price = runPrice(tracker.keywordCount, devices.length);
+  const dirty = schedule !== tracker.schedule || devices.join() !== tracker.devices.join();
 
   const save = useMutation({
-    mutationFn: () => api(`/trackers/${tracker.id}`, { method: "PATCH", body: { devices, depth, schedule } }),
+    mutationFn: () => api(`/trackers/${tracker.id}`, { method: "PATCH", body: { devices, schedule } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["tracker", tracker.id] });
       void queryClient.invalidateQueries({ queryKey: ["trackers", projectId] });
@@ -694,17 +692,6 @@ function SettingsTab({ tracker, projectId }: { tracker: TrackerDetail; projectId
               ))}
             </Select>
           </Field>
-          <div className="sm:col-span-2">
-            <Field label="Depth" hint="A check stops at the page where your site appears, so it costs $0.01 per results page fetched, up to depth/10 pages when the site isn't found.">
-              <Select value={depth} onChange={(event) => setDepth(Number(event.target.value))} className="sm:max-w-56">
-                {DEPTHS.map((option) => (
-                  <option key={option} value={option}>
-                    Top {option}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
           <p className="font-mono text-xs text-muted sm:col-span-2" aria-live="polite">
             With these settings: <span className="text-ink tabular">{usdRange(price.min, price.max)}</span> per run, <span className="text-ink tabular">{monthlyText(price, schedule)}</span>.
           </p>
@@ -808,16 +795,19 @@ function TrackerView() {
         title={data.name.replaceAll(",", ", ")}
         description={
           <span className="font-mono text-xs">
-            {data.domain} · {whereText(data)} · {data.language} · {data.devices.join(" + ")} · top {data.depth} · {data.schedule}
+            {data.domain} · {whereText(data)} · {data.language} · {data.devices.join(" + ")} · top 100 · {data.schedule}
             {data.nextRunAt && data.schedule !== "manual" ? ` · next run ${dateTime(data.nextRunAt)}` : ""}
           </span>
         }
         action={
-          <div className="flex flex-col items-start gap-1.5 sm:items-end">
-            <Button variant="primary" onClick={() => setConfirming(true)} disabled={running || data.keywordCount === 0}>
-              <Play className="size-4" aria-hidden /> Run check now
-            </Button>
-            {data.keywordCount > 0 ? <CostNote min={data.estimate.min} max={data.estimate.max} /> : <span className="text-xs text-muted">Add keywords to run a check</span>}
+          <div className="flex flex-wrap items-start gap-4 sm:justify-end">
+            <ScheduleControl tracker={data} />
+            <div className="flex flex-col items-start gap-1.5 sm:items-end">
+              <Button variant="primary" onClick={() => setConfirming(true)} disabled={running || data.keywordCount === 0}>
+                <Play className="size-4" aria-hidden /> {running ? "Checking…" : "Check rankings now"}
+              </Button>
+              {data.keywordCount > 0 ? <CostNote min={data.estimate.min} max={data.estimate.max} /> : <span className="text-xs text-muted">Add keywords to run a check</span>}
+            </div>
           </div>
         }
       />
@@ -887,11 +877,49 @@ function TrackerView() {
           {num(data.keywordCount)} {data.keywordCount === 1 ? "keyword" : "keywords"} × {data.devices.length} {data.devices.length === 1 ? "device" : "devices"} = <span className="font-mono text-ink tabular">{num(data.estimate.checks)} checks</span>, billed to your YepAPI balance.
         </p>
         <p>
-          Each check costs $0.01 per results page fetched and stops at the page where {data.domain} appears, so the run costs between{" "}
-          <span className="font-mono text-ink tabular">{usd(data.estimate.min)}</span> and <span className="font-mono text-ink tabular">{usd(data.estimate.max)}</span>.
+          Each check reads the top 100 results for $0.10, so the run costs <span className="font-mono text-ink tabular">{usd(data.estimate.min)}</span>.
         </p>
       </ConfirmDialog>
     </>
+  );
+}
+
+const SCHEDULE_LABELS: Record<Schedule, string> = { daily: "Every day", weekly: "Every week", monthly: "Every month", manual: "Only when I click" };
+
+/**
+ * How often the tracker checks on its own, changed in place. Checks run in the background on the
+ * server and are saved, whether or not anyone has the page open.
+ */
+function ScheduleControl({ tracker }: { tracker: { id: string; schedule: Schedule; nextRunAt: string | null; estimate: { min: number; max: number } } }) {
+  const queryClient = useQueryClient();
+  const save = useMutation({
+    mutationFn: (schedule: Schedule) => api(`/trackers/${tracker.id}`, { method: "PATCH", body: { schedule } }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["tracker", tracker.id] }),
+  });
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <label className="flex items-center gap-2 text-[13px] text-muted">
+        Updates automatically
+        <Select
+          value={tracker.schedule}
+          onChange={(event) => save.mutate(event.target.value as Schedule)}
+          disabled={save.isPending}
+          className="h-9 w-44 text-[13px] text-ink"
+        >
+          {(["daily", "weekly", "monthly", "manual"] as const).map((option) => (
+            <option key={option} value={option}>
+              {SCHEDULE_LABELS[option]}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <span className="text-xs text-muted">
+        {tracker.schedule === "manual"
+          ? "No automatic checks"
+          : `${monthlyText(tracker.estimate, tracker.schedule)}${tracker.nextRunAt ? ` · next ${dateTime(tracker.nextRunAt)}` : ""}`}
+      </span>
+      <ErrorNote error={save.error} />
+    </div>
   );
 }
 

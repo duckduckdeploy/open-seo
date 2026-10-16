@@ -57,8 +57,8 @@ describe("parseSerp", () => {
 });
 
 describe("estimateRun", () => {
-  it("prices a run between one page per check and the full depth", () => {
-    expect(estimateRun({ depth: 30, devices: ["desktop", "mobile"] }, 100)).toEqual({ checks: 200, min: 2, max: 6 });
-    expect(estimateRun({ depth: 10, devices: ["desktop"] }, 5)).toEqual({ checks: 5, min: 0.05, max: 0.05 });
+  it("prices every check at the top 100: $0.10 per keyword and device", () => {
+    expect(estimateRun({ devices: ["desktop", "mobile"] }, 100)).toEqual({ checks: 200, min: 20, max: 20 });
+    expect(estimateRun({ devices: ["desktop"] }, 5)).toEqual({ checks: 5, min: 0.5, max: 0.5 });
   });
 });

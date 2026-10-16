@@ -11,7 +11,6 @@ async function newTracker(user: Awaited<ReturnType<typeof readyUser>>, extra: Re
     locationCode: 2840,
     locationName: "United States",
     devices: ["desktop", "mobile"],
-    depth: 30,
     schedule: "manual",
     keywords: ["Plumber Austin", "plumber austin", "drain cleaning", "water heater repair"],
     ...extra,
@@ -21,16 +20,16 @@ async function newTracker(user: Awaited<ReturnType<typeof readyUser>>, extra: Re
 const runRow = async (id: string) => (await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, id)))[0];
 
 describe("trackers", () => {
-  it("creates a tracker for free, with de-duplicated lowercase keywords and a price range", async () => {
+  it("creates a tracker for free, with de-duplicated lowercase keywords and its price", async () => {
     const user = await readyUser();
     const before = harness.fake.requests.length;
     const tracker = await newTracker(user);
-    expect(tracker).toMatchObject({ domain: "acme.com", devices: ["desktop", "mobile"], depth: 30, nextRunAt: null });
+    expect(tracker).toMatchObject({ domain: "acme.com", devices: ["desktop", "mobile"], depth: 100, nextRunAt: null });
     expect(harness.fake.requests.length).toBe(before);
 
     const detail = await user.api.ok("GET", `/trackers/${tracker.id}`);
-    // 3 keywords x 2 devices; $0.01 per page, up to 3 pages each.
-    expect(detail).toMatchObject({ keywordCount: 3, estimate: { checks: 6, min: 0.06, max: 0.18 } });
+    // 3 keywords x 2 devices, each the top 100 (10 pages at $0.01).
+    expect(detail).toMatchObject({ keywordCount: 3, estimate: { checks: 6, min: 0.6, max: 0.6 } });
     const listed = await user.api.ok("GET", `/projects/${user.project.id}/trackers`);
     expect(listed[0]).toMatchObject({ keywordCount: 3, activeRunId: null, lastRunAt: null });
   });
@@ -82,11 +81,13 @@ describe("rank runs", () => {
     await processRankRun(run.id);
     const checks = harness.fake.requests.slice(before).filter((r) => r.path === "/v1/serp/google");
     expect(checks).toHaveLength(6);
-    expect(checks[0]?.body).toMatchObject({ stop_at_domain: "acme.com", depth: 30, location_code: 2840 });
+    // The whole top 100, without stopping at the site.
+    expect(checks[0]?.body).toMatchObject({ depth: 100, location_code: 2840 });
+    expect(checks[0]?.body).not.toHaveProperty("stop_at_domain");
 
     const done = await runRow(run.id);
     expect(done).toMatchObject({ status: "completed", total: 6, done: 6, failed: 0 });
-    expect(done?.costUsd).toBeGreaterThanOrEqual(0.06);
+    expect(done?.costUsd).toBeGreaterThanOrEqual(0.6);
     expect(done?.heartbeatAt).not.toBeNull();
 
     const results = await user.api.ok("GET", `/trackers/${tracker.id}/results?device=mobile`);
@@ -185,10 +186,10 @@ describe("rank runs", () => {
     const tracker = await newTracker(user);
     const [keyword] = await db.select().from(schema.rankKeywords).where(eq(schema.rankKeywords.trackerId, tracker.id));
     expect((await user.api.ok("PATCH", `/trackers/${tracker.id}/keywords/${keyword!.id}`, { pinned: true })).pinned).toBe(true);
+    // Depth is not a setting: every check reads the top 100.
     const updated = await user.api.ok("PATCH", `/trackers/${tracker.id}`, { schedule: "weekly", depth: 10, devices: ["mobile", "mobile"] });
-    expect(updated).toMatchObject({ schedule: "weekly", depth: 10, devices: ["mobile"] });
+    expect(updated).toMatchObject({ schedule: "weekly", depth: 100, devices: ["mobile"] });
     expect(new Date(updated.nextRunAt).getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600_000);
-    expect((await user.api.patch(`/trackers/${tracker.id}`, { depth: 15 })).status).toBe(400);
   });
 });
 

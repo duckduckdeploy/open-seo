@@ -32,6 +32,13 @@ export const CURATED_MODELS: { id: string; assistant: string; default: boolean }
   { id: "deepseek/deepseek-v4-pro", assistant: "DeepSeek", default: false },
 ];
 
+/**
+ * Every rank check reads the top 100 Google results (10 pages), like any rank tracker: where a
+ * site ranks beyond page one matters as much as page one. YepAPI bills $0.01 per page of 10.
+ */
+export const RANK_DEPTH = 100;
+export const RANK_CHECK_USD = 0.1;
+
 export const DEFAULT_MODEL_IDS = CURATED_MODELS.filter((m) => m.default).map((m) => m.id);
 
 export function assistantName(modelId: string): string {
