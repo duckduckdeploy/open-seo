@@ -37,21 +37,21 @@ export default async function ComparePage({ params }: ComparePageProps) {
       <article>
         <header className="relative overflow-hidden border-b border-line">
           <div className="bg-glow pointer-events-none absolute inset-0" aria-hidden="true" />
-          <div className="container-page relative py-20 md:py-28">
+          <div className="container-page relative py-20 text-center md:py-28">
             <p className="eyebrow">Comparison</p>
-            <h1 className="text-display mt-5 max-w-4xl text-balance">OpenSEO vs {c.name}</h1>
-            <p className="text-lede mt-7 max-w-2xl text-pretty">{c.summary}</p>
+            <h1 className="text-display mx-auto mt-5 max-w-4xl text-balance">OpenSEO vs {c.name}</h1>
+            <p className="mx-auto mt-7 max-w-3xl text-xl leading-relaxed text-pretty text-muted">{c.summary}</p>
           </div>
         </header>
 
         <section aria-labelledby="entry-title" className="container-page py-20 md:py-28">
           <SectionHeader eyebrow="Starting price" id="entry-title" title={`${c.name} ${c.entry.plan}: ${c.entry.price}`} />
-          <ul className="mt-8 max-w-2xl list-disc space-y-2 pl-5 text-muted marker:text-accent">
+          <ul className="mx-auto mt-8 max-w-2xl list-disc space-y-2 pl-5 text-lg text-muted marker:text-accent">
             {c.entry.notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>
-          <p className="mt-6 max-w-2xl text-sm leading-relaxed text-faint">
+          <p className="mx-auto mt-6 max-w-2xl text-center text-sm leading-relaxed text-faint">
             List prices on monthly billing, checked in {c.checked}. {c.name} sets its own prices and changes them; check its pricing page for current figures. OpenSEO&apos;s data costs are
             at the time of writing; see{' '}
             <Link href="/pricing" className="font-medium text-accent-text underline-offset-4 hover:underline">
@@ -60,7 +60,7 @@ export default async function ComparePage({ params }: ComparePageProps) {
             .
           </p>
 
-          <div className="mt-14 overflow-x-auto rounded-lg border border-line bg-surface shadow-hard-sm">
+          <div className="mx-auto mt-14 max-w-5xl overflow-x-auto rounded-lg border border-line bg-surface shadow-hard-sm">
             <table className="w-full min-w-[40rem] border-collapse text-sm">
               <caption className="sr-only">
                 OpenSEO compared with {c.name}
@@ -94,7 +94,7 @@ export default async function ComparePage({ params }: ComparePageProps) {
         </section>
 
         <section aria-labelledby="choose-title" className="border-y border-line bg-surface">
-          <div className="container-page grid gap-6 py-20 md:grid-cols-2 md:py-28 lg:gap-8">
+          <div className="container-page mx-auto grid max-w-5xl gap-6 py-20 md:grid-cols-2 md:py-28 lg:gap-8">
             <div className="rounded-lg border border-line bg-bg p-8">
               <h2 id="choose-title" className="text-heading">
                 Choose {c.name} if
@@ -118,10 +118,10 @@ export default async function ComparePage({ params }: ComparePageProps) {
 
         <section aria-labelledby="faq-title" className="container-page py-20 md:py-28">
           <SectionHeader eyebrow="FAQ" id="faq-title" title="Questions" />
-          <div className="mt-12 max-w-3xl">
+          <div className="mx-auto mt-12 max-w-3xl">
             <FaqList faqs={c.faqs} />
           </div>
-          <p className="mt-10 text-sm text-faint">
+          <p className="mt-10 text-center text-sm text-faint">
             {c.name} is a trademark of its owner. OpenSEO is not affiliated with or endorsed by {c.name}.
           </p>
         </section>

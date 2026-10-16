@@ -9,10 +9,10 @@ interface SectionHeaderProps {
   align?: 'left' | 'center';
 }
 
-export function SectionHeader({ eyebrow, title, lede, id, as: Heading = 'h2', align = 'left' }: SectionHeaderProps) {
+export function SectionHeader({ eyebrow, title, lede, id, as: Heading = 'h2', align = 'center' }: SectionHeaderProps) {
   const centered = align === 'center';
   return (
-    <div className={centered ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
+    <div className={centered ? 'mx-auto max-w-3xl text-center' : 'max-w-2xl'}>
       <p className="eyebrow">{eyebrow}</p>
       <Heading id={id} className={`mt-4 text-balance ${Heading === 'h1' ? 'text-display' : 'text-title'}`}>
         {title}

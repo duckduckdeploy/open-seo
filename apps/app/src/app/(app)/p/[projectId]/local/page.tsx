@@ -8,6 +8,7 @@ import { ConfirmDialog, ExtLink, Facts, Group, isActive, Note, ProgressBar, type
 import { Badge, Button, Card, CardHeader, CostNote, cx, EmptyState, ErrorNote, Field, Input, PageHeader, Select, Spinner, Stat, Table } from "@/components/ui";
 import { api, dateTime, num, usd } from "@/lib/api";
 import { useEstimate, useLookup } from "@/lib/lookup";
+import { GridMap } from "@/components/research/grid-map";
 import { Price } from "@/components/research/lookup-ui";
 
 type Place = {
@@ -464,13 +465,22 @@ type Tier = "strong" | "medium" | "weak" | "none" | "error" | "pending";
 const tierOf = (point: GridPoint | undefined): Tier =>
   !point ? "pending" : point.error ? "error" : point.position == null ? "none" : point.position <= 3 ? "strong" : point.position <= 10 ? "medium" : point.position <= 20 ? "weak" : "none";
 const TIER: Record<Tier, { label: string; className: string }> = {
-  strong: { label: "1–3 strong", className: "border-ink bg-pos text-surface" },
-  medium: { label: "4–10 medium", className: "border-ink bg-accent text-accent-fg" },
-  weak: { label: "11–20 weak", className: "border-warn bg-warn/15 text-ink" },
-  none: { label: "Not found", className: "border-line bg-sunken text-muted" },
-  error: { label: "Search failed", className: "border-neg bg-neg/10 text-neg" },
-  pending: { label: "Waiting", className: "border-dashed border-line text-faint" },
+  strong: { label: "1–3 strong", className: "bg-pos text-white" },
+  medium: { label: "4–10 medium", className: "bg-warn text-white" },
+  weak: { label: "11–20 weak", className: "bg-neg text-white" },
+  none: { label: "Not found", className: "bg-faint text-white" },
+  error: { label: "Search failed", className: "bg-surface text-neg" },
+  pending: { label: "Waiting", className: "bg-surface/80 text-faint" },
 };
+const plannedPoint = (grid: { centerLat: number; centerLng: number; size: number; spacingM: number }, row: number, col: number) => {
+  const half = (grid.size - 1) / 2;
+  const metresPerDegree = 111_320;
+  return {
+    lat: grid.centerLat + ((half - row) * grid.spacingM) / metresPerDegree,
+    lng: grid.centerLng + ((col - half) * grid.spacingM) / (metresPerDegree * Math.cos((grid.centerLat * Math.PI) / 180)),
+  };
+};
+
 const cellText = (point: GridPoint | undefined) => (!point ? "·" : point.error ? "!" : point.position == null ? "20+" : String(point.position));
 
 function GridView({ gridId, projectId, onDeleted }: { gridId: string; projectId: string; onDeleted: () => void }) {
@@ -550,52 +560,38 @@ function GridView({ gridId, projectId, onDeleted }: { gridId: string; projectId:
           <Stat label="Cost" value={usd(data.costUsd)} />
         </div>
 
-        <div className="grid gap-5 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] [&>*]:min-w-0">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem] [&>*]:min-w-0">
           <div>
-            <p className="mb-1 text-center font-mono text-[11px] uppercase tracking-wide text-muted">North</p>
-            <div role="grid" aria-label={`Positions for ${data.keyword} around ${data.placeName}`} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${data.size}, minmax(0, 1fr))` }}>
-              {Array.from({ length: data.size }, (_, row) => (
-                <div key={row} role="row" className="contents">
-                  {Array.from({ length: data.size }, (_, col) => {
-                    const point = byCell.get(`${row}:${col}`);
-                    const tier = tierOf(point);
-                    const isCentre = row === centre && col === centre;
-                    const selected = point !== undefined && point.id === shown?.id;
-                    return (
-                      <div key={col} role="gridcell" className="aspect-square">
-                        <button
-                          type="button"
-                          disabled={!point}
-                          onMouseEnter={() => point && setActive(point.id)}
-                          onFocus={() => point && setActive(point.id)}
-                          onClick={() => point && setActive(point.id)}
-                          aria-pressed={selected}
-                          aria-label={`Row ${row + 1}, column ${col + 1}${isCentre ? ", your business" : ""}: ${!point ? "waiting" : point.error ? "search failed" : point.position == null ? "not in the top 20" : `position ${point.position}`}`}
-                          className={cx(
-                            "relative grid size-full place-items-center rounded-sm border font-mono font-semibold tabular",
-                            data.size >= 7 ? "text-[11px] sm:text-sm" : "text-sm sm:text-base",
-                            TIER[tier].className,
-                            selected && "ring-2 ring-ink ring-offset-1 ring-offset-surface",
-                          )}
-                        >
-                          {cellText(point)}
-                          {isCentre && <MapPin className="absolute top-0.5 right-0.5 size-3" aria-hidden />}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+            <div className="aspect-square overflow-hidden rounded-lg border border-line sm:aspect-[4/3]">
+              <GridMap
+                center={{ lat: data.centerLat, lng: data.centerLng }}
+                extentM={span + data.spacingM}
+                label={`Positions for ${data.keyword} around ${data.placeName}, on a map of the area`}
+                onPick={(key) => setActive(key)}
+                pins={Array.from({ length: data.size * data.size }, (_, index) => {
+                  const row = Math.floor(index / data.size);
+                  const col = index % data.size;
+                  const point = byCell.get(`${row}:${col}`);
+                  const planned = plannedPoint(data, row, col);
+                  return {
+                    key: point?.id ?? `pending-${index}`,
+                    lat: point?.lat ?? planned.lat,
+                    lng: point?.lng ?? planned.lng,
+                    label: cellText(point),
+                    tone: TIER[tierOf(point)].className,
+                    title: `Row ${row + 1}, column ${col + 1}${row === centre && col === centre ? ", your business" : ""}: ${!point ? "waiting" : point.error ? "search failed" : point.position == null ? "not in the top 20" : `position ${point.position}`}`,
+                    selected: point !== undefined && point.id === shown?.id,
+                  };
+                })}
+              />
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted" aria-label="Legend">
               {(["strong", "medium", "weak", "none"] as const).map((tier) => (
                 <li key={tier} className="flex items-center gap-1.5">
-                  <span className={cx("inline-block size-3.5 rounded-sm border", TIER[tier].className)} aria-hidden /> {TIER[tier].label}
+                  <span className={cx("inline-block size-3.5 rounded-full", TIER[tier].className)} aria-hidden /> {TIER[tier].label}
                 </li>
               ))}
-              <li className="flex items-center gap-1">
-                <MapPin className="size-3.5" aria-hidden /> your business
-              </li>
+              <li>Your business is at the centre. North is up.</li>
             </ul>
           </div>
 
@@ -636,7 +632,7 @@ function GridView({ gridId, projectId, onDeleted }: { gridId: string; projectId:
                 )}
               </>
             )}
-            <p className="mt-2 text-xs text-muted">Hover, focus or tap a cell to see who ranks there.</p>
+            <p className="mt-2 text-xs text-muted">Click a pin on the map to see who ranks there.</p>
           </div>
         </div>
         <Note>

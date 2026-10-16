@@ -22,7 +22,7 @@ export default function FeaturesPage() {
           title="Everything in the workspace"
           lede="Each feature has its own page: what it does, what you can do with it, and what each action costs."
         />
-        <div className="mt-10 max-w-2xl">
+        <div className="mx-auto mt-10 max-w-2xl">
           <StatusNote>
             OpenSEO is an early project in active development. The features below are being built, and some may not be
             available yet.

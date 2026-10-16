@@ -10,7 +10,7 @@ import { features, getFeature } from '@/content/features';
 import { TourShots } from '@/components/tour-section';
 import { featureTour, tourStop } from '@/content/tour';
 import { pageMeta } from '@/lib/metadata';
-import { SIGN_UP_URL } from '@/lib/site';
+import { inSentence, SIGN_UP_URL } from '@/lib/site';
 
 interface FeaturePageProps {
   params: Promise<{ slug: string }>;
@@ -51,41 +51,39 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
         <header className="relative overflow-hidden border-b border-line">
           <div className="bg-glow pointer-events-none absolute inset-0" aria-hidden="true" />
           <div className="container-page relative py-20 md:py-28">
-            <nav aria-label="Breadcrumb" className="text-sm text-muted">
-              <ol className="flex flex-wrap items-center gap-2">
-                <li>
-                  <Link href="/features" className="underline-offset-4 hover:text-ink hover:underline">
-                    Features
-                  </Link>
-                </li>
-                <li aria-hidden="true" className="text-faint">/</li>
-                <li aria-current="page" className="font-medium text-ink">
-                  {feature.name}
-                </li>
-              </ol>
+            <nav aria-label="Breadcrumb" className="text-center text-sm text-muted">
+              <Link href="/features" className="underline-offset-4 hover:text-ink hover:underline">
+                Features
+              </Link>
+              <span className="mx-2 text-faint" aria-hidden="true">
+                /
+              </span>
+              <span aria-current="page" className="font-medium text-ink">
+                {feature.name}
+              </span>
             </nav>
 
-            <span className="mt-10 inline-flex size-12 items-center justify-center rounded-md bg-accent-soft text-accent-text">
-              <Icon className="size-6" aria-hidden="true" strokeWidth={1.75} />
-            </span>
-
-            <h1 className="text-display mt-7 max-w-4xl text-balance">{feature.headline}</h1>
-            <p className="text-lede mt-7 max-w-2xl text-pretty">{feature.summary}</p>
-
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href={SIGN_UP_URL} size="lg">
-                Get started
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </ButtonLink>
-              <ButtonLink href="#costs" variant="secondary" size="lg">
-                What it costs
-              </ButtonLink>
+            <div className="mx-auto mt-10 max-w-3xl text-center">
+              <span className="inline-flex size-12 items-center justify-center rounded-md bg-accent-soft text-accent-text">
+                <Icon className="size-6" aria-hidden="true" strokeWidth={1.75} />
+              </span>
+              <h1 className="text-display mt-7 text-balance">{feature.headline}</h1>
+              <p className="mt-7 text-xl leading-relaxed text-pretty text-muted md:text-[1.375rem]">{feature.summary}</p>
+              <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+                <ButtonLink href={SIGN_UP_URL} size="lg">
+                  Get started
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </ButtonLink>
+                <ButtonLink href="#costs" variant="secondary" size="lg">
+                  What it costs
+                </ButtonLink>
+              </div>
             </div>
 
             {feature.facts ? (
-              <dl className="mt-16 flex flex-wrap gap-x-16 gap-y-8 border-t border-line pt-10">
+              <dl className="mx-auto mt-16 flex max-w-4xl flex-wrap justify-center gap-x-16 gap-y-8 border-t border-line pt-10">
                 {feature.facts.map((fact) => (
-                  <div key={fact.label} className="flex flex-col-reverse gap-1">
+                  <div key={fact.label} className="flex flex-col-reverse items-center gap-1 text-center">
                     <dt className="text-sm text-muted">{fact.label}</dt>
                     <dd className="font-display text-4xl font-bold tracking-tight tabular-nums">{fact.value}</dd>
                   </div>
@@ -115,28 +113,34 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
         })}
 
         {/* What it does */}
-        <section aria-labelledby="what-title" className="container-page grid grid-cols-1 gap-6 py-20 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-16 md:py-28">
-          <h2 id="what-title" className="eyebrow md:pt-1.5">
-            What it does
-          </h2>
-          <div className="max-w-2xl space-y-6 text-lg leading-relaxed">
-            {feature.what.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
+        <section aria-labelledby="what-title" className="container-page py-20 md:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="eyebrow">What it does</p>
+            <h2 id="what-title" className="text-title mt-4">
+              {feature.name}
+            </h2>
+            <div className="mt-8 space-y-6 text-xl leading-relaxed text-pretty text-muted">
+              {feature.what.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* What you can do */}
         <section aria-labelledby="can-title" className="border-y border-line bg-surface">
-          <div className="container-page grid grid-cols-1 gap-6 py-20 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-16 md:py-28">
-            <h2 id="can-title" className="eyebrow md:pt-1.5">
-              What you can do
-            </h2>
-            <ul className="grid grid-cols-1 gap-x-12 gap-y-2 sm:grid-cols-2">
+          <div className="container-page py-20 md:py-28">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="eyebrow">What you can do</p>
+              <h2 id="can-title" className="text-title mt-4">
+                Everything {inSentence(feature.name)} covers
+              </h2>
+            </div>
+            <ul className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2">
               {feature.capabilities.map((capability) => (
-                <li key={capability.title} className="border-t border-line py-7">
-                  <h3 className="text-lg font-semibold">{capability.title}</h3>
-                  <p className="mt-2 leading-relaxed text-muted [overflow-wrap:anywhere]">{capability.body}</p>
+                <li key={capability.title} className="rounded-lg border border-line bg-bg p-7">
+                  <h3 className="text-heading">{capability.title}</h3>
+                  <p className="mt-3 leading-relaxed text-muted [overflow-wrap:anywhere]">{capability.body}</p>
                 </li>
               ))}
             </ul>
@@ -144,32 +148,28 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
         </section>
 
         {/* What each action costs */}
-        <section
-          id="costs"
-          aria-labelledby="costs-title"
-          className="container-page grid grid-cols-1 scroll-mt-20 gap-6 py-20 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-16 md:py-28"
-        >
-          <h2 id="costs-title" className="eyebrow md:pt-1.5">
-            What each action costs
-          </h2>
-          <div className="max-w-3xl">
+        <section id="costs" aria-labelledby="costs-title" className="container-page scroll-mt-20 py-20 md:py-28">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="eyebrow">What it costs</p>
+            <h2 id="costs-title" className="text-title mt-4">
+              What each action costs
+            </h2>
+            <p className="mt-6 text-xl leading-relaxed text-pretty text-muted">
+              Prices at the time of writing, billed by the data provider to your own key. The app shows the price of every action before it runs.
+            </p>
+          </div>
+          <div className="mx-auto mt-12 max-w-3xl">
             <PriceTable caption={`What ${feature.name} actions cost`} rows={rowsFromFeatureCosts(feature.costs)} />
-            <div className="mt-6 space-y-3 text-[0.9375rem] text-muted">
+            <div className="mt-6 space-y-3 text-center text-[0.9375rem] text-muted">
               {feature.costNote ? <p>{feature.costNote}</p> : null}
               <p>
-                Prices at the time of writing, billed by the data provider to your own key. The app shows the price of every
-                action before it runs.{' '}
                 <Link href="/pricing" className="font-medium text-accent-text underline decoration-accent-line underline-offset-4 hover:decoration-accent">
                   See all pricing
                 </Link>
-                .
               </p>
             </div>
             <div className="mt-10">
-              <StatusNote>
-                In active development. This feature is being built, and parts of what this page describes may not be
-                available yet.
-              </StatusNote>
+              <StatusNote>In active development. This feature is being built, and parts of what this page describes may not be available yet.</StatusNote>
             </div>
           </div>
         </section>

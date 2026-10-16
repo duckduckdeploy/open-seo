@@ -2,11 +2,12 @@
 
 import { ExternalLink, Star } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { type Column, DataTable } from "@/components/research/data-table";
 import { ExportButton, Price, RunPrompt, ViewErrors, ViewMeta } from "@/components/research/lookup-ui";
 import { SearchBar, useChangeMarket, useMarket, useToolNav } from "@/components/research/search-bar";
 import { Skeleton } from "@/components/research/serp-overview";
+import { GridMap } from "@/components/research/grid-map";
 import { csvDate, finite, oneOf, slug } from "@/components/research/util";
 import { Card, cx, PageHeader, Select } from "@/components/ui";
 import { num } from "@/lib/api";
@@ -32,7 +33,7 @@ const SPACINGS = [
 type Business = Place & { ranks: (number | null)[]; found: number; top3: number; average: number | null };
 
 function rankTone(rank: number | null) {
-  if (rank == null) return "bg-sunken text-faint";
+  if (rank == null) return "bg-faint text-white";
   if (rank <= 3) return "bg-pos text-white";
   if (rank <= 10) return "bg-warn text-white";
   return "bg-neg text-white";
@@ -83,6 +84,10 @@ export function LocalRank({ project }: { project: Project }) {
   const selectedId = params.get("biz") ?? businesses[0]?.id ?? null;
   const selected = businesses.find((business) => business.id === selectedId) ?? businesses[0];
   const pick = (id: string) => nav({ biz: id }, { replace: true });
+  // The point whose top 10 is listed next to the map: the centre until a pin is clicked.
+  const [chosen, setChosen] = useState<{ data: GridData; cell: number } | null>(null);
+  const setPoint = (cell: number) => data && setChosen({ data, cell });
+  const shownPoint = chosen && chosen.data === data ? chosen.cell : data ? Math.floor(data.size / 2) * data.size + Math.floor(data.size / 2) : 0;
 
   const columns: Column<Business>[] = [
     {
@@ -195,62 +200,89 @@ export function LocalRank({ project }: { project: Project }) {
             <ViewMeta lookups={lookups} />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]">
-            <section className="rounded-xl border border-line bg-surface p-5">
-              <h2 className="truncate font-display text-base font-semibold">{selected ? selected.name : "No business found"}</h2>
-              {selected && (
-                <p className="mt-1 text-[13px] text-muted">
-                  Top 3 in {selected.top3} of {data.points.length} points · found in {selected.found} · average {selected.average == null ? "—" : `#${selected.average.toFixed(1)}`}
-                </p>
-              )}
-              <div className="mt-4 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${data.size}, minmax(0, 1fr))` }} role="grid" aria-label={`Rank of ${selected?.name ?? "the business"} at each grid point; north is up`}>
-                {data.points.map((point, cell) => {
-                  const rank = selected?.ranks[cell] ?? null;
-                  const top = point.places[0];
-                  return (
-                    <div
-                      key={`${point.row}-${point.col}`}
-                      role="gridcell"
-                      title={point.error ? point.error : `${rank ? `#${rank}` : "Not in the top 20"} here. #1: ${top?.name ?? "none"}`}
-                      className={cx(
-                        "grid aspect-square place-items-center rounded-lg font-display text-lg font-bold tabular",
-                        point.error ? "bg-sunken text-neg" : rankTone(rank),
-                        point.row === center && point.col === center && "ring-2 ring-ink ring-offset-2 ring-offset-surface",
-                      )}
-                    >
-                      {point.error ? "!" : rank ?? "20+"}
-                    </div>
-                  );
-                })}
+          <section className="overflow-hidden rounded-xl border border-line bg-surface">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
+              <div className="min-w-0">
+                <h2 className="truncate font-display text-base font-semibold">{selected ? selected.name : "No business found"}</h2>
+                {selected && (
+                  <p className="mt-0.5 text-[13px] text-muted">
+                    Top 3 in {selected.top3} of {data.points.length} points · found in {selected.found} · average {selected.average == null ? "—" : `#${selected.average.toFixed(1)}`}
+                    {selected.url && (
+                      <>
+                        {" · "}
+                        <a href={safeHref(selected.url) ?? undefined} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
+                          Google Maps <ExternalLink className="size-3" aria-hidden />
+                        </a>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
-              <p className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+              <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-3 rounded bg-pos" aria-hidden /> 1–3
+                  <span className="size-3 rounded-full bg-pos" aria-hidden /> 1–3
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-3 rounded bg-warn" aria-hidden /> 4–10
+                  <span className="size-3 rounded-full bg-warn" aria-hidden /> 4–10
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-3 rounded bg-neg" aria-hidden /> 11–20
+                  <span className="size-3 rounded-full bg-neg" aria-hidden /> 11–20
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-3 rounded bg-sunken" aria-hidden /> not in top 20
+                  <span className="size-3 rounded-full bg-faint" aria-hidden /> not in top 20
                 </span>
-                <span>Outlined: the centre. North is up.</span>
               </p>
-              {selected && (
-                <div className="mt-4 border-t border-line pt-4 text-[13px]">
-                  <p className="text-muted">{selected.address}</p>
-                  {selected.url && (
-                    <a href={safeHref(selected.url) ?? undefined} target="_blank" rel="noreferrer noopener" className="mt-1 inline-flex items-center gap-1 font-medium text-accent-text hover:underline">
-                      Open in Google Maps <ExternalLink className="size-3" aria-hidden />
-                    </a>
-                  )}
-                </div>
-              )}
-            </section>
+            </div>
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
+              <div className="aspect-square sm:aspect-[4/3] lg:aspect-auto lg:h-[36rem]">
+                <GridMap
+                  center={data.center}
+                  extentM={(data.size - 1) * data.spacingM + data.spacingM}
+                  language={market.language}
+                  label={`Map of the grid around ${data.center.address ?? marketName(market)}, with the rank of ${selected?.name ?? "the business"} at each point`}
+                  onPick={(key) => setPoint(Number(key))}
+                  pins={data.points.map((p, cell) => {
+                    const rank = selected?.ranks[cell] ?? null;
+                    return {
+                      key: String(cell),
+                      lat: p.lat,
+                      lng: p.lng,
+                      label: p.error ? "!" : rank != null ? String(rank) : "20+",
+                      tone: p.error ? "bg-surface text-neg" : rankTone(rank),
+                      title: p.error ? p.error : `${rank ? `#${rank}` : "Not in the top 20"} here. #1: ${p.places[0]?.name ?? "none"}`,
+                      selected: cell === shownPoint,
+                    };
+                  })}
+                />
+              </div>
+              <div className="border-t border-line lg:border-t-0 lg:border-l">
+                <p className="px-4 pt-4 text-xs text-muted">
+                  {shownPoint === center * data.size + center ? "At the centre of the grid" : "At the chosen point"}, the top 10. Click a pin for another point.
+                </p>
+                <ol className="mt-2 divide-y divide-line">
+                  {(data.points[shownPoint]?.places ?? []).slice(0, 10).map((place, index) => (
+                    <li key={place.id}>
+                      <button
+                        type="button"
+                        onClick={() => pick(place.id)}
+                        className={cx("flex w-full items-center gap-3 px-4 py-2 text-left text-[13px] hover:bg-sunken/60", place.id === selected?.id && "bg-accent/10")}
+                      >
+                        <span className="w-5 shrink-0 text-right font-mono text-xs text-muted tabular">{index + 1}</span>
+                        <span className="min-w-0 flex-1 truncate font-medium">{place.name}</span>
+                        {finite(place.rating) && (
+                          <span className="inline-flex shrink-0 items-center gap-0.5 font-mono text-xs text-muted">
+                            {place.rating.toFixed(1)} <Star className="size-3 fill-current text-warn" aria-hidden />
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </div>
+          </section>
 
-            <section className="min-w-0 rounded-xl border border-line bg-surface">
+          <section className="min-w-0 rounded-xl border border-line bg-surface">
               <div className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-4">
                 <h2 className="font-display text-base font-semibold">Who ranks across the area</h2>
                 <span className="text-xs text-muted">{num(businesses.length)} businesses · click one to see its grid</span>
@@ -263,7 +295,6 @@ export function LocalRank({ project }: { project: Project }) {
               </div>
               <DataTable rows={businesses} columns={columns} rowKey={(b) => b.id} caption="Businesses ranking across the grid" initialSort={{ key: "top3", order: "desc" }} empty="Maps returned no businesses for this keyword here." />
             </section>
-          </div>
         </div>
       )}
     </>

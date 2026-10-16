@@ -37,18 +37,18 @@ export default function PricingPage() {
       {/* Header */}
       <section aria-labelledby="pricing-title" className="relative overflow-hidden border-b border-line">
         <div className="bg-glow pointer-events-none absolute inset-0" aria-hidden="true" />
-        <div className="container-page relative grid grid-cols-1 gap-14 py-20 md:py-28 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-20 xl:py-32">
-          <div>
+        <div className="container-page relative flex flex-col items-center gap-14 py-20 text-center md:py-28 xl:py-32">
+          <div className="max-w-3xl">
             <p className="eyebrow">Pricing</p>
-            <h1 id="pricing-title" className="text-display mt-5 max-w-3xl text-balance">
+            <h1 id="pricing-title" className="text-display mt-5 text-balance">
               Open source. You pay only for the <span className="mark">data you use</span>.
             </h1>
-            <p className="text-lede mt-7 max-w-2xl text-pretty">
+            <p className="mx-auto mt-7 max-w-2xl text-xl leading-relaxed text-pretty text-muted">
               The software is open source and free to self-host. Search data comes from our data provider, YepAPI: you add
               your own key, and each lookup is billed per call at the price the app shows before it runs. The crawler,
               the site audit and your Search Console data cost nothing.
             </p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
               <ButtonLink href={SIGN_UP_URL} size="lg">
                 Get started
                 <ArrowRight className="size-4" aria-hidden="true" />
@@ -58,7 +58,7 @@ export default function PricingPage() {
               </ButtonLink>
             </div>
           </div>
-          <div className="w-full rounded-xl border border-line bg-surface p-2 shadow-hard-lg lg:w-[24rem]">
+          <div className="w-full max-w-md rounded-xl border border-line bg-surface p-2 text-left shadow-hard-lg">
             <div className="rounded-lg bg-sunken px-6 py-6">
               <p className="text-sm font-medium text-muted">The software</p>
               <p className="mt-2 font-display text-4xl font-bold tracking-tight">$0</p>
@@ -83,7 +83,7 @@ export default function PricingPage() {
           title="What lookups cost"
           lede="Examples for common actions. The app shows the price of every action before it runs, including the ones not listed here."
         />
-        <div className="mt-14 max-w-4xl md:mt-16">
+        <div className="mx-auto mt-14 max-w-4xl md:mt-16">
           <PriceTable caption="Example prices for common lookups" rows={rowsFromPricing(priceRows)} />
           <ul className="mt-6 space-y-3 text-[0.9375rem] text-muted">
             <li>
@@ -106,7 +106,7 @@ export default function PricingPage() {
       <section aria-labelledby="credit-title" className="border-y border-line bg-surface">
         <div className="container-page py-20 md:py-28 xl:py-32">
           <SectionHeader
-              eyebrow="Free credits"
+            eyebrow="Free credits"
             id="credit-title"
             title="What $5 covers"
             lede="New data accounts start with $5 in free credit. Spent on one kind of lookup, that is roughly:"
@@ -123,7 +123,7 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-[0.9375rem] text-muted">
+          <p className="mt-6 text-center text-[0.9375rem] text-muted">
             Each figure is an alternative, not a bundle. In practice you will mix actions, and the app shows each price
             as you go.
           </p>
@@ -133,7 +133,7 @@ export default function PricingPage() {
       {/* FAQ */}
       <section aria-labelledby="faq-title" className="container-page py-20 md:py-28 xl:py-32">
         <SectionHeader eyebrow="FAQ" id="faq-title" title="Questions about the model" />
-        <div className="mt-12 max-w-3xl">
+        <div className="mx-auto mt-12 max-w-3xl">
           <FaqList faqs={pricingFaqs} />
           <p className="mt-6 text-muted">
             Want to run it yourself?{' '}

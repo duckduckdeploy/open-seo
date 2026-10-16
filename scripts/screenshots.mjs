@@ -149,7 +149,7 @@ const VIEWS = [
     url: '/tools/local-rank-checker?q=dentist&country=us&lang=en&loc=1026201',
     shots: {
       'local-rank': 'viewport',
-      'local-rank-grid': `heading("h2", "Who ranks across the area").closest(".grid")`,
+      'local-rank-grid': `document.querySelector('iframe[title="Map of the area"]').closest("section")`,
     },
   },
   {
@@ -231,7 +231,10 @@ async function main() {
   const chrome = chromePath();
   if (!chrome) throw new Error('Chrome or Edge not found. Set CHROME_PATH.');
   const profile = mkdtempSync(join(tmpdir(), 'openseo-shots-'));
-  const browser = spawn(chrome, ['--headless=new', `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+  // SHOT_WINDOW=1 opens a real (off-screen) window instead of headless Chrome: Google Maps
+  // embeds stay blank in headless Chrome, so retake the map shots that way.
+  const mode = process.env.SHOT_WINDOW === '1' ? ['--window-position=-3000,0', `--window-size=${WIDTH},${HEIGHT + 120}`, '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding', '--disable-background-timer-throttling'] : ['--headless=new'];
+  const browser = spawn(chrome, [...mode, `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, '--hide-scrollbars', '--no-first-run', '--no-default-browser-check', 'about:blank'], { stdio: 'ignore' });
 
   try {
     let target;
@@ -244,6 +247,9 @@ async function main() {
     await page.send('Page.enable');
     await page.send('Runtime.enable');
     await page.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: SCALE, mobile: false });
+    // Google Maps embeds stay blank for a browser that says it is headless.
+    const { Browser: product } = await fetch(`http://127.0.0.1:${PORT}/json/version`).then((r) => r.json());
+    await page.send('Network.setUserAgentOverride', { userAgent: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ${product.replace('HeadlessChrome', 'Chrome')} Safari/537.36` });
     const host = new URL(APP).hostname;
     for (const cookie of cookies) await page.send('Network.setCookie', { ...cookie, domain: host, path: '/' });
 
@@ -261,8 +267,8 @@ async function main() {
         const busy = await evaluate(`!!document.querySelector('[aria-busy="true"], .animate-pulse, .animate-spin')`);
         quiet = busy ? 0 : quiet + 1;
       }
-      // Charts animate in after their data arrives.
-      await sleep(2000);
+      // Charts animate in after their data arrives; map embeds load their tiles.
+      await sleep((await evaluate(`!!document.querySelector('iframe[title="Map of the area"]')`)) ? 6000 : 2000);
     };
 
     for (const view of VIEWS) {
@@ -298,7 +304,14 @@ async function main() {
             const pad = 16;
             clip = { x: Math.max(0, rect.x - pad), y: Math.max(0, rect.y - pad), width: rect.width + pad * 2, height: rect.height + pad * 2, scale: 1 };
           }
-          const { data } = await page.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
+          // Capturing beyond the viewport leaves out cross-origin frames (the Maps embed), so a crop
+          // that fits on screen is scrolled into view and captured as shown.
+          const fits = clip.height <= HEIGHT;
+          if (fits) {
+            await evaluate(`window.scrollTo(0, ${Math.max(0, clip.y - 8)}); true`);
+            await sleep(crop === 'viewport' ? 300 : 1500);
+          }
+          const { data } = await page.send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: !fits });
           const file = join(OUT, `${name}${theme === 'dark' ? '-dark' : ''}.webp`);
           const info = await sharp(Buffer.from(data, 'base64')).webp({ quality: 86 }).toFile(file);
           console.log(`  ${name}${theme === 'dark' ? '-dark' : ''}.webp ${info.width}x${info.height} ${Math.round(info.size / 1024)} KB`);
