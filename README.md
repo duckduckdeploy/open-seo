@@ -37,7 +37,7 @@
 **OpenSEO** is a user-first, open-source SEO tool suite for everyone. It covers keyword research, rank tracking, backlinks, site audits and AI visibility, and reads your own Google Search Console and Analytics data. Run it on your own machine or server, read every line of it, and hand it to your AI agent.
 
 > [!NOTE]
-> OpenSEO is early and in active development. [Issues](https://github.com/duckduckdeploy/open-seo/issues) and ideas are very welcome.
+> OpenSEO is early and in active development. [Issues](https://github.com/duckduckdeploy/openseo/issues) and ideas are very welcome.
 
 ## ✨ Why OpenSEO
 
@@ -68,7 +68,7 @@
 You need [Docker](https://docs.docker.com/get-docker/). On Windows or macOS that's Docker Desktop with at least 4 GB of memory.
 
 ```bash
-git clone https://github.com/duckduckdeploy/open-seo.git openseo
+git clone https://github.com/duckduckdeploy/openseo.git openseo
 cd openseo
 cp .env.example .env
 # In .env, set AUTH_SECRET (32+ random characters)
@@ -103,7 +103,7 @@ For other agents, create an API key under Settings and store it in an environmen
 **Claude Code:** install the plugin, which bundles the connection and the skills:
 
 ```bash
-/plugin install openseo --marketplace duckduckdeploy/open-seo
+/plugin install openseo --marketplace duckduckdeploy/openseo
 ```
 
 Set `OPENSEO_MCP_URL` to point it at a self-hosted install.
@@ -179,10 +179,10 @@ User documentation and tutorials live on the site under `/docs` (`apps/web/src/a
 
 ## 🤝 Contributing
 
-Clear [issues](https://github.com/duckduckdeploy/open-seo/issues) are the most useful contribution: what you did, what you expected and what happened. For code, run `pnpm typecheck` and `pnpm test` before opening a pull request.
+Clear [issues](https://github.com/duckduckdeploy/openseo/issues) are the most useful contribution: what you did, what you expected and what happened. For code, run `pnpm typecheck` and `pnpm test` before opening a pull request.
 
 ## 📄 Licence
 
 [MIT](LICENSE). Use it, change it, host it.
 
-<p align="center"><sub>Made in the open · <a href="https://openseo.gg">openseo.gg</a> · <a href="https://github.com/duckduckdeploy/open-seo">⭐ Star on GitHub</a></sub></p>
+<p align="center"><sub>Made in the open · <a href="https://openseo.gg">openseo.gg</a> · <a href="https://github.com/duckduckdeploy/openseo">⭐ Star on GitHub</a></sub></p>

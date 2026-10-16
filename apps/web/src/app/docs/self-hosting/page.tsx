@@ -26,7 +26,7 @@ const serverInstall = `# Ubuntu or Debian: install Docker
 curl -fsSL https://get.docker.com | sh
 
 # Get OpenSEO
-git clone https://github.com/duckduckdeploy/open-seo.git openseo
+git clone https://github.com/duckduckdeploy/openseo.git openseo
 cd openseo
 cp .env.example .env`;
 

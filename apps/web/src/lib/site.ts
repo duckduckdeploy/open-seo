@@ -8,7 +8,7 @@ export const APP_URL = env(process.env.NEXT_PUBLIC_APP_URL, 'http://localhost:32
 
 /** The public repository. A fork can point its site at its own with NEXT_PUBLIC_GITHUB_URL. */
 export const GITHUB_URL: string | null =
-  process.env.NEXT_PUBLIC_GITHUB_URL?.trim().replace(/\/+$/, '') || 'https://github.com/duckduckdeploy/open-seo';
+  process.env.NEXT_PUBLIC_GITHUB_URL?.trim().replace(/\/+$/, '') || 'https://github.com/duckduckdeploy/openseo';
 
 /** The public API address. Agents connect to `${PUBLIC_API_URL}/mcp`. */
 export const PUBLIC_API_URL = env(process.env.NEXT_PUBLIC_API_URL, 'http://localhost:4100');
