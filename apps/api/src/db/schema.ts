@@ -628,33 +628,6 @@ export const oauthTokens = pgTable(
   (t) => [index("oauth_tokens_user_idx").on(t.userId, t.clientId)],
 );
 
-// ── Free tools (public, operator-paid) ──────────────────────────────────────
-
-/** Counters for rate limits and daily budgets. A row per bucket, deleted once expired. */
-export const freeToolCounters = pgTable(
-  "free_tool_counters",
-  {
-    bucket: text("bucket").primaryKey(),
-    calls: integer("calls").notNull().default(0),
-    usd: doublePrecision("usd").notNull().default(0),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [index("free_tool_counters_expiry_idx").on(t.expiresAt)],
-);
-
-/** Results shared by every visitor for the same tool and input. Failures are cached briefly. */
-export const freeToolCache = pgTable(
-  "free_tool_cache",
-  {
-    key: text("key").primaryKey(),
-    tool: text("tool").notNull(),
-    payload: jsonb("payload").notNull(),
-    failed: boolean("failed").notNull().default(false),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  },
-  (t) => [index("free_tool_cache_expiry_idx").on(t.expiresAt)],
-);
-
 // ── Relations ───────────────────────────────────────────────────────────────
 
 export const projectsRelations = relations(projects, ({ many }) => ({

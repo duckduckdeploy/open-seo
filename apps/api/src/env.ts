@@ -22,7 +22,7 @@ const schema = z.object({
   // it would let anyone choose their own address.
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
   // A header your edge proxy sets to the visitor's address and visitors cannot set themselves,
-  // e.g. cf-connecting-ip behind Cloudflare or x-real-ip from nginx. Free tools rate-limit by it.
+  // e.g. cf-connecting-ip behind Cloudflare or x-real-ip from nginx. Sign-in rate limits use it.
   CLIENT_IP_HEADER: z.string().regex(/^[a-z0-9-]+$/i).optional(),
   // Site audits per user: how many may run at once, and how many may start in a day.
   AUDIT_MAX_ACTIVE_PER_USER: z.coerce.number().int().min(1).max(100).default(3),
@@ -35,15 +35,6 @@ const schema = z.object({
   // Tests and development: send every Google request to this server instead.
   GOOGLE_API_BASE_URL: z.string().url().optional(),
 
-  // Optional: free tools on the public site, paid from this operator key. Unset = disabled.
-  FREE_TOOLS_YEPAPI_KEY: z.string().startsWith("yep_sk_").optional(),
-  // Spending cap across every visitor, per UTC day.
-  FREE_TOOLS_DAILY_BUDGET_USD: z.coerce.number().positive().max(10000).default(5),
-  // Cloudflare Turnstile. Required in production when free tools are on.
-  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
-  TURNSTILE_VERIFY_URL: z.string().url().default("https://challenges.cloudflare.com/turnstile/v0/siteverify"),
-  // RDAP lookups for the domain age tool (free, keyless).
-  RDAP_BASE_URL: z.string().url().default("https://rdap.org"),
 });
 
 const parsed = schema.safeParse(process.env);

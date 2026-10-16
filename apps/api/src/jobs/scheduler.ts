@@ -3,7 +3,6 @@ import { db, schema } from "../db";
 import { nextRunAfter } from "../lib/pool";
 import { isRunInProgress } from "../lib/errors";
 import { failAiRun, startAiRun } from "../services/ai";
-import { cleanupFreeTools } from "../services/free-tools";
 import { cleanupOAuth } from "../services/oauth";
 import { failRankRun, startRankRun } from "../services/rank";
 import { dispatch } from "./dispatch";
@@ -77,7 +76,6 @@ defineJob("scheduler.tick", 1, async (_data, log) => {
  */
 defineJob("maintenance.cleanup", 1, async () => {
   await db.delete(schema.apiCache).where(lt(schema.apiCache.expiresAt, new Date()));
-  await cleanupFreeTools();
   await cleanupOAuth();
   const abandoned = { status: "failed" as const, error: "Interrupted before it finished", finishedAt: new Date() };
   const tables = [schema.rankRuns, schema.aiRuns, schema.audits, schema.geoGrids] as const;

@@ -15,7 +15,6 @@ import { keywordRoutes } from "./routes/keywords";
 import { localRoutes } from "./routes/local";
 import { lookupRoutes } from "./routes/lookups";
 import { projectRoutes } from "./routes/projects";
-import { publicToolRoutes } from "./routes/public-tools";
 import { rankRoutes } from "./routes/rank";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -113,8 +112,6 @@ export async function buildApp(): Promise<FastifyInstance> {
   // OAuth for MCP clients that cannot send an API key, such as ChatGPT (services/oauth.ts).
   await app.register(oauthPublicRoutes);
 
-  // Free tools for the public site: no account, their own guards (services/free-tools.ts).
-  await app.register(publicToolRoutes, { prefix: "/api/public" });
 
   await registerMcp(app);
 

@@ -23,7 +23,6 @@ x-build: &build
     NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost:3200}
     NEXT_PUBLIC_SITE_URL: ${WEB_URL:-http://localhost:3101}
     NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:4100}
-    NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-}
 
 services:
