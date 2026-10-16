@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 import type { TourStop } from '@/content/tour';
+import { inSentence } from '@/lib/site';
 import { Screenshot } from './screenshot';
 import { ShotSlides } from './shot-slides';
 
@@ -36,7 +37,7 @@ export function TourSection({ stop, tinted = false }: { stop: TourStop; tinted?:
             ))}
           </ul>
           <Link href={stop.href} className="mt-8 inline-flex items-center gap-1.5 font-medium text-accent-text underline-offset-4 hover:underline">
-            Learn more about {stop.eyebrow.toLowerCase()}
+            Learn more about {inSentence(stop.eyebrow)}
             <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </div>

@@ -264,7 +264,7 @@ export const features: Feature[] = [
     name: 'MCP server and REST API',
     headline: 'SEO your AI agent can do, with a spending cap',
     summary:
-      'An MCP server with 61 tools and a REST API. Claude, Cursor, Codex and other agents can use every OpenSEO feature, and every paid call takes a spending ceiling.',
+      'An MCP server with 63 tools and a REST API. Claude, Cursor, Codex and other agents can use every OpenSEO feature, and every paid call takes a spending ceiling.',
     icon: Terminal,
     what: [
       'OpenSEO is a web app, a REST API and an MCP server. Everything you can do in the app, an agent can do with an API key: research keywords, check rankings, read your Search Console data, run an audit.',
@@ -272,7 +272,7 @@ export const features: Feature[] = [
     ],
     capabilities: [
       {
-        title: '61 MCP tools',
+        title: '63 MCP tools',
         body: 'One HTTP endpoint at {API_URL}/mcp that MCP clients connect to.',
       },
       {

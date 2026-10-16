@@ -218,6 +218,47 @@ export default function SeoToolsGuide() {
         For the full workflow, see <Link href="/docs/tutorials/competitor-research">Size up a competitor</Link>.
       </p>
 
+      <h2 id="ai-visibility">AI visibility checker</h2>
+      <Screenshot name="ai-visibility" window alt="The AI visibility checker with a question, the assistants chosen and the summary of what they cited" />
+      <p>
+        Type a question your customers would ask an AI assistant. ChatGPT, Gemini, Claude and Perplexity answer it with web
+        search on; tick Grok, Meta AI or DeepSeek to add them. In <strong>Your site, brand</strong>, enter your domain and
+        any names your brand goes by, separated by commas, such as <code>upliftdesk.com, Uplift</code>.
+      </p>
+      <Screenshot
+        name="ai-visibility-sites"
+        alt="The most cited sites, with the assistants that cite each one and their place in each list"
+        caption="Sites more assistants cite come first, then those cited higher in their lists."
+      />
+      <Screenshot
+        name="ai-visibility-order"
+        alt="One column per assistant listing its sources in order"
+        caption="Each assistant's sources in the order it gave them. Hover a site to see where else it appears."
+      />
+      <p>
+        Links are cleaned before they are compared: tracking parameters are removed, and Gemini&apos;s redirect links are
+        followed to the page they point at. A site is <strong>cited</strong> when one of its pages is a source, and{' '}
+        <strong>named</strong> when your domain or brand appears in the answer&apos;s text. To ask the same questions
+        regularly and follow the trend, use AI visibility in a project.
+      </p>
+
+      <h2 id="local-rank">Local rank checker</h2>
+      <Screenshot name="local-rank" window alt="The local rank checker for dentist around Austin, Texas" />
+      <p>
+        Enter what people search on Google Maps, a country and a city or area, then the grid: 3 × 3, 5 × 5 or 7 × 7 points,
+        0.5 to 5 km apart. Each point runs a Maps search biased to that spot and keeps the top 20 businesses.
+      </p>
+      <Screenshot
+        name="local-rank-grid"
+        alt="A grid of rank numbers next to the businesses ranked by top-3 coverage"
+        caption="The selected business's rank at each point; north is up and the centre is outlined."
+      />
+      <p>
+        The table ranks every business by how many points it holds a top-3 place, with how many it appears in at all, its
+        average rank, rating and reviews. Click any business to see its grid: every business&apos;s place is already in the
+        results, so it costs nothing. To check one business on a schedule, run geo-grids in a project.
+      </p>
+
       <h2 id="costs">What a search costs</h2>
       <p>
         Each view runs several lookups, so its price is the sum of theirs, shown before you search. Results are cached for

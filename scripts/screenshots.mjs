@@ -138,6 +138,21 @@ const VIEWS = [
     shots: { 'backlinks-intersect': `document.querySelector("[role=tablist]").parentElement` },
   },
   {
+    url: '/tools/ai-visibility-checker?q=What+is+the+best+standing+desk+for+a+home+office%3F&site=upliftdesk.com%2C+Uplift',
+    shots: {
+      'ai-visibility': 'viewport',
+      'ai-visibility-sites': `heading("h2", "Most cited sites").closest("section")`,
+      'ai-visibility-order': `heading("h2", "Citations in order").parentElement`,
+    },
+  },
+  {
+    url: '/tools/local-rank-checker?q=dentist&country=us&lang=en&loc=1026201',
+    shots: {
+      'local-rank': 'viewport',
+      'local-rank-grid': `heading("h2", "Who ranks across the area").closest(".grid")`,
+    },
+  },
+  {
     url: '/tools/competitors?tab=serp&keywords=standing+desk%0Aadjustable+desk%0Aergonomic+chair%0Adesk+converter%0Amonitor+arm&country=us&lang=en',
     shots: { 'competitors-serp': `document.querySelector("[role=tablist]").parentElement` },
   },
@@ -241,7 +256,7 @@ async function main() {
     // Ready when nothing is loading: no busy region, no skeleton, no spinner, for a second.
     const settle = async () => {
       let quiet = 0;
-      for (let i = 0; i < 240 && quiet < 5; i++) {
+      for (let i = 0; i < 480 && quiet < 5; i++) {
         await sleep(250);
         const busy = await evaluate(`!!document.querySelector('[aria-busy="true"], .animate-pulse, .animate-spin')`);
         quiet = busy ? 0 : quiet + 1;

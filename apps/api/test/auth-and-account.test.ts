@@ -166,7 +166,7 @@ describe("budget and usage", () => {
   it("lists available lookups and the model catalog for free", async () => {
     const { api } = await signUp();
     const lookups = await api.ok<{ name: string }[]>("GET", "/lookups");
-    expect(lookups).toHaveLength(25);
+    expect(lookups).toHaveLength(27);
     const models = await api.ok("GET", "/ai/models");
     expect(models.curated.length).toBeGreaterThan(0);
     expect(models.models.length).toBeGreaterThan(100);

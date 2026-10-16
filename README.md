@@ -5,7 +5,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge" alt="MIT licence"></a>
   <a href="#-self-host-with-docker"><img src="https://img.shields.io/badge/self--host-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Self-host with Docker"></a>
-  <a href="https://openseo.gg/docs/mcp"><img src="https://img.shields.io/badge/MCP-61%20tools-7c3aed?style=for-the-badge" alt="61 MCP tools"></a>
+  <a href="https://openseo.gg/docs/mcp"><img src="https://img.shields.io/badge/MCP-63%20tools-7c3aed?style=for-the-badge" alt="63 MCP tools"></a>
   <a href="https://openseo.gg"><img src="https://img.shields.io/badge/openseo.gg-live-2563eb?style=for-the-badge" alt="openseo.gg"></a>
 </p>
 
@@ -66,7 +66,7 @@ Every tool is one search: type a keyword, domain or URL, pick a country (and a c
 - 🔓 **Open source, all of it.** The app, the API, the crawler and the agent server are MIT licensed. Change what you need and keep your changes.
 - 🏠 **Your server, your data.** One Docker command runs the whole suite on your own computer or server. Your keywords, rankings and audits stay in your own database.
 - 💸 **No surprise bills.** Every action shows its cost before it runs, and a monthly limit stops all spending once it is reached.
-- 🤖 **Agents on a leash.** 61 MCP tools cover the whole workspace. Every paid tool takes `dry_run` and `max_cost_usd`, so an agent cannot spend more than you agreed.
+- 🤖 **Agents on a leash.** 63 MCP tools cover the whole workspace. Every paid tool takes `dry_run` and `max_cost_usd`, so an agent cannot spend more than you agreed.
 - 📈 **Your own Google data.** Connect Search Console and GA4 read-only. You get queries one push from page one, and pages scored by where improving them is most worth it.
 - 🎯 **Focused workflows.** The SEO work most sites actually do, without the hundred reports nobody opens.
 
@@ -144,7 +144,7 @@ Set `OPENSEO_MCP_URL` to point it at a self-hosted install.
 
 ### 🧩 Skills
 
-Ready-made SEO workflows in [`plugins/openseo/skills`](plugins/openseo/skills), built on the 61 MCP tools:
+Ready-made SEO workflows in [`plugins/openseo/skills`](plugins/openseo/skills), built on the 63 MCP tools:
 
 | Skill | What it does |
 |---|---|

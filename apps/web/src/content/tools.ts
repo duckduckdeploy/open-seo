@@ -1,4 +1,4 @@
-import { FileSearch, Globe, Lightbulb, Link2, ListOrdered, Search, Swords, type LucideIcon } from 'lucide-react';
+import { Bot, FileSearch, Globe, Grid3x3, Lightbulb, Link2, ListOrdered, Search, Swords, type LucideIcon } from 'lucide-react';
 import type { ScreenName } from '@/components/screenshot';
 import type { Faq } from './pricing';
 
@@ -431,6 +431,111 @@ export const tools: ResearchTool[] = [
     costNote: 'A keyword gap costs $0.06 – $0.36 depending on how many keywords come back. Competitor data is cached for a week.',
     faqs: [...shared],
     guide: '/docs/tutorials/seo-tools#competitors',
+  },
+  {
+    slug: 'ai-visibility-checker',
+    name: 'AI visibility checker',
+    icon: Bot,
+    headline: 'See which sites AI assistants cite, and in what order',
+    summary: 'Ask ChatGPT, Gemini, Claude and Perplexity the same question with web search on, and compare the sources each one cites, in order. Is your site among them?',
+    lede: 'Ask the question your customers ask. ChatGPT, Gemini, Claude and Perplexity answer it with web search on, and you see every source each one cites, in order: which sites most assistants trust, where each sits in their lists, and whether your site or brand is cited or named.',
+    points: ['Four assistants, one question', 'Citations in order, side by side', 'Your site cited and named, or not'],
+    appPath: '/tools/ai-visibility-checker',
+    hero: { shot: 'ai-visibility', alt: 'The AI visibility checker: one question asked to four assistants, how many sources they cited, and the most cited sites' },
+    parts: [
+      {
+        shot: 'ai-visibility-sites',
+        alt: 'The most cited sites, with the assistants that cite each one and their place in each list',
+        title: 'The sites the assistants trust',
+        body: 'Every site any assistant cited, ranked by how many assistants cite it and how high. Each one shows which assistants cite it and at which place in their list of sources.',
+      },
+      {
+        shot: 'ai-visibility-order',
+        alt: 'Four columns, one per assistant, listing the sources each cited in order',
+        title: 'Citations in order, side by side',
+        body: 'One column per assistant with its sources numbered as it gave them. Hover a site to see where else it appears; your own site is highlighted. Each answer is underneath, with whether it names you.',
+      },
+    ],
+    uses: [
+      { title: 'Find out if AI recommends you', body: 'Ask what a customer would ask and see whether any assistant cites your site or names your brand.' },
+      { title: 'Find the sources that matter', body: 'The sites most assistants cite are the ones worth a mention, a review or a guest article.' },
+      { title: 'Compare assistants', body: 'Each one answers differently. See which cite many sources and which cite few.' },
+      { title: 'Track it over time', body: 'Add the question to a project to ask it again on a schedule and follow the trend.' },
+    ],
+    costs: [
+      { action: 'ChatGPT, with web search', price: 'about $0.17' },
+      { action: 'Gemini, with web search', price: 'about $0.06' },
+      { action: 'Claude, with web search', price: 'about $0.12' },
+      { action: 'Perplexity', price: 'about $0.03' },
+      { action: 'Grok, Meta AI or DeepSeek (optional)', price: 'varies, up to about $0.30' },
+    ],
+    total: 'About $0.38 per question',
+    costNote: 'Answers are priced by the words read and written, so each varies a little. The same question within a day is free.',
+    faqs: [
+      {
+        question: 'Is this AEO or GEO?',
+        answer: [
+          'Both names describe the same work: being the source AI assistants cite and the brand they name. Answer engine optimisation (AEO) and generative engine optimisation (GEO) start with knowing where you stand, which is what this check shows.',
+        ],
+      },
+      {
+        question: 'Why do the answers change?',
+        answer: ['Assistants write a new answer every time and search the web as they go, so sources shift between runs. Asking on a schedule in a project shows the trend rather than one snapshot.'],
+      },
+      {
+        question: 'What counts as named?',
+        answer: ['Your domain or a brand name you enter appearing in the answer’s text. Links and citation markers do not count, so a source list alone does not make an answer name you.'],
+      },
+      ...shared,
+    ],
+    guide: '/docs/tutorials/seo-tools#ai-visibility',
+  },
+  {
+    slug: 'local-rank-checker',
+    name: 'Local rank checker',
+    icon: Grid3x3,
+    headline: 'Who ranks on Google Maps, block by block',
+    summary: 'Google Maps rankings for any keyword across a grid around a city: the top 20 businesses at every point, and any business’s rank in each cell.',
+    lede: 'Enter a keyword and a city. A grid of Maps searches runs across the area, each from its own spot, and every business that shows up is ranked: who owns the area, and how any business ranks in each part of town.',
+    points: ['3 × 3 to 7 × 7 grids', 'Every business, not just yours', 'Pick any business to see its grid'],
+    appPath: '/tools/local-rank-checker',
+    hero: { shot: 'local-rank', alt: 'The local rank checker: a 5 × 5 grid of Google Maps ranks for dentist around Austin, Texas, and the businesses that rank across it' },
+    parts: [
+      {
+        shot: 'local-rank-grid',
+        alt: 'A grid of rank numbers coloured green to red, next to a table of businesses with top 3 coverage, average rank, rating and reviews',
+        title: 'The grid and who owns it',
+        body: 'Each cell is a Maps search from that spot: green for the top 3, amber for 4 to 10, red for 11 to 20. Next to it, every business ranked by how many points it holds a top-3 place. Click one to see its grid; the data is already there, so it costs nothing.',
+      },
+    ],
+    uses: [
+      { title: 'See where you are visible', body: 'Find the parts of town where you show in the top 3, and where you drop off.' },
+      { title: 'Know your local competitors', body: 'See who holds the top places across the area, with their ratings and reviews.' },
+      { title: 'Plan a new location', body: 'Check how crowded the map is before you open or advertise somewhere.' },
+      { title: 'Track it over time', body: 'Run geo-grids for a project business to see its local rankings move.' },
+    ],
+    costs: [
+      { action: 'Find the city or area on the map', price: '$0.07' },
+      { action: '3 × 3 grid (9 Maps searches)', price: '$0.63' },
+      { action: '5 × 5 grid (25 Maps searches)', price: '$1.75' },
+      { action: '7 × 7 grid (49 Maps searches)', price: '$3.43' },
+    ],
+    total: '$1.82 for a 5 × 5 grid',
+    costNote: 'A 3 × 3 grid costs $0.70 and a 7 × 7 grid $3.50, everything included. The same grid within a day is free, and picking another business never costs anything.',
+    faqs: [
+      {
+        question: 'How is a rank measured?',
+        answer: [
+          'Each point runs a Google Maps search biased to a circle around that spot, as if someone searched there, and the business’s place in the top 20 is its rank. It is a strong signal of local visibility, not a copy of what one phone shows.',
+        ],
+      },
+      {
+        question: 'How far apart are the points?',
+        answer: ['You choose: 0.5, 1, 2 or 5 km. Use a tight grid for a dense city centre and a wide one for a whole metro area.'],
+      },
+      ...shared,
+    ],
+    guide: '/docs/tutorials/seo-tools#local-rank',
   },
 ];
 

@@ -15,7 +15,7 @@ export default function McpToolsPage() {
   return (
     <DocArticle slug={slug}>
       <p>
-        The MCP server at <code>{'{API_URL}'}/mcp</code> offers 61 tools. Each one calls the same REST route the
+        The MCP server at <code>{'{API_URL}'}/mcp</code> offers 63 tools. Each one calls the same REST route the
         dashboard uses, with the caller&apos;s API key, so validation, prices, caching and limits are identical. Most
         tools take an optional <code>project_id</code>; leave it out when the account has one project. With no project
         at all, paid lookups run on their own in the market their input names (the United States by default).
@@ -54,7 +54,7 @@ export default function McpToolsPage() {
 
       <h2 id="lookups">Paid lookups</h2>
       <p>
-        The 25 lookups share their names with the REST <code>/lookups/:name</code> routes. Their inputs are listed in
+        The 27 lookups share their names with the REST <code>/lookups/:name</code> routes. Their inputs are listed in
         each tool&apos;s schema. Prices are YepAPI&apos;s; &quot;per 100&quot; prices are billed on rows returned, so
         the figure for the default size is the most it can cost.
       </p>
@@ -86,8 +86,10 @@ export default function McpToolsPage() {
           ['lighthouse', 'Lighthouse scores, Core Web Vitals and failed audits with a severity, most serious first.', '$0.05'],
           ['maps_search', 'Google Maps places for a query, optionally around a point.', '$0.07'],
           ['maps_place', 'A full Google Business profile.', '$0.05'],
+          ['maps_grid', 'Google Maps rankings across a 3×3 to 7×7 grid around a place: the top 20 businesses at every point.', '$0.07 per point'],
           ['maps_reviews', 'Up to 150 reviews with owner replies.', '$0.015/100, min $0.01'],
           ['ai_compare', 'One prompt to up to 8 models side by side, with sources.', 'tokens, min $0.01 each'],
+          ['ai_citations', 'One question to up to 6 assistants with web search, with the sources each cited in order, links cleaned.', 'tokens, min $0.01 each'],
         ]}
       />
 

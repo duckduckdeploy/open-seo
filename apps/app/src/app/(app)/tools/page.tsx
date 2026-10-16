@@ -5,7 +5,7 @@ import Link from "next/link";
 import { TOOLS } from "@/components/research/tool-catalog";
 import { PageHeader } from "@/components/ui";
 
-const GROUPS = ["Keywords", "Domains"] as const;
+const GROUPS = ["Keywords", "Domains", "AI and local"] as const;
 
 export default function ToolsIndex() {
   return (

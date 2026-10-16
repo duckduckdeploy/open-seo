@@ -1,4 +1,16 @@
 {
+  "ai-visibility": {
+    "width": 1440,
+    "height": 900
+  },
+  "ai-visibility-order": {
+    "width": 1176,
+    "height": 934
+  },
+  "ai-visibility-sites": {
+    "width": 1176,
+    "height": 747
+  },
   "backlinks": {
     "width": 1440,
     "height": 900
@@ -86,6 +98,14 @@
   "keyword-overview-serp": {
     "width": 1176,
     "height": 1068
+  },
+  "local-rank": {
+    "width": 1440,
+    "height": 900
+  },
+  "local-rank-grid": {
+    "width": 1176,
+    "height": 747
   },
   "page-analyser": {
     "width": 1440,

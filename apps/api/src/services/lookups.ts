@@ -1,7 +1,9 @@
 import { sortLighthouseAudits } from "@openseo/shared";
 import { estimateCost, type KeywordFilter, type YepApi } from "@openseo/yepapi";
 import { z } from "zod";
+import { cleanSources } from "../lib/brand-analysis";
 import { toDomain } from "../lib/domain";
+import { buildGrid } from "../lib/geo";
 import { locationInfo } from "../lib/locations";
 import { mapLimit } from "../lib/pool";
 
@@ -63,6 +65,46 @@ function keywordFilters(input: { minVolume?: number; maxDifficulty?: number; min
   if (input.minWords != null) filters.push({ field: "words", op: ">=", value: input.minWords });
   return filters.length ? filters : undefined;
 }
+
+// ── Helpers for the AI visibility check ───────────────────────────────────────
+
+const REDIRECT_HOSTS = new Set(["vertexaisearch.cloud.google.com"]);
+
+/**
+ * The page a cited link really points at. Some models cite through a redirect (Gemini's grounding
+ * links): it is followed once, without loading the page. Search-engine junk glued onto a path
+ * ("/best-desk&c=123&mkt=en-us") is cut. Null when the link cannot be read.
+ */
+async function resolveCitation(source: { url: string; title?: string }): Promise<{ url: string; title?: string } | null> {
+  let url: URL;
+  try {
+    url = new URL(source.url);
+  } catch {
+    return null;
+  }
+  if (REDIRECT_HOSTS.has(url.hostname)) {
+    try {
+      const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(4000) });
+      const location = res.headers.get("location");
+      if (location) url = new URL(location, url);
+    } catch {
+      // Unreachable: fall back to the domain the model gave as the title.
+    }
+    if (REDIRECT_HOSTS.has(url.hostname)) {
+      const domain = source.title?.trim();
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) return null;
+      return { url: `https://${domain}/` };
+    }
+    // The title of a redirected citation is only its domain.
+    return { url: url.toString() };
+  }
+  if (!url.search && url.pathname.includes("&")) url.pathname = url.pathname.slice(0, url.pathname.indexOf("&"));
+  // A title that is only the URL again adds nothing.
+  const title = source.title && !/^https?:\/\//i.test(source.title.trim()) ? source.title : undefined;
+  return title ? { url: url.toString(), title } : { url: url.toString() };
+}
+
+const MAPS_SEARCH_USD = 0.07;
 
 export const lookups: Lookup[] = [
   // ── Keywords ──────────────────────────────────────────────────────────────
@@ -561,6 +603,80 @@ export const lookups: Lookup[] = [
     },
   }),
   define({
+    name: "maps_grid",
+    title: "Local rank grid",
+    description:
+      "Google Maps rankings for a keyword across a grid of points around a place: the top 20 businesses at every point, so any business's rank can be read in each cell. Give the place as text (a city or an address) or as latitude and longitude. $0.07 per point, plus $0.07 to find a place given as text (3x3 $0.63-0.70, 5x5 $1.75-1.82, 7x7 $3.43-3.50).",
+    feature: "local_seo",
+    ttl: DAY,
+    input: z
+      .object({
+        keyword: z.string().trim().min(1).max(200),
+        near: z.string().trim().min(2).max(300).optional().describe('Place the grid centres on, e.g. "Austin, Texas, United States"'),
+        latitude: z.number().min(-90).max(90).optional(),
+        longitude: z.number().min(-180).max(180).optional(),
+        size: z.union([z.literal(3), z.literal(5), z.literal(7)]).default(5),
+        spacingM: z.number().int().min(200).max(10000).default(1000).describe("Metres between grid points"),
+        language,
+      })
+      .refine((i) => i.near != null || (i.latitude != null && i.longitude != null), { message: "Give near, or latitude and longitude" }),
+    estimate: (i) => {
+      const searches = i.size * i.size + (i.latitude != null && i.longitude != null ? 0 : 1);
+      const cost = Math.round(searches * MAPS_SEARCH_USD * 100) / 100;
+      return { min: cost, max: cost, formula: `$${MAPS_SEARCH_USD.toFixed(2)} per grid point` };
+    },
+    run: async (yep, i, p) => {
+      const language = i.language ?? p.language;
+      let costUsd = 0;
+      let center: { lat: number; lng: number; name: string | null; address: string | null };
+      if (i.latitude != null && i.longitude != null) {
+        center = { lat: i.latitude, lng: i.longitude, name: null, address: null };
+      } else {
+        const found = await yep.maps.search({ query: i.near as string, limit: 1, language, region: p.country });
+        costUsd += found.costUsd;
+        const place = found.data.results[0];
+        if (!place) throw new Error(`Could not find "${i.near}" on Google Maps. Try a city with its state or country.`);
+        center = { lat: place.latitude, lng: place.longitude, name: place.name, address: place.address };
+      }
+      // Each point biases the search to a circle half the spacing wide, like a searcher standing there.
+      const radius = Math.min(50000, Math.max(250, Math.round(i.spacingM / 2)));
+      const points = await mapLimit(buildGrid(center.lat, center.lng, i.size, i.spacingM), 5, async (point) => {
+        try {
+          const res = await yep.maps.search({
+            query: i.keyword,
+            limit: 20,
+            language,
+            location_bias: { latitude: point.lat, longitude: point.lng, radius_m: radius },
+            rank_preference: "relevance",
+          });
+          costUsd += res.costUsd;
+          const places = res.data.results.map((place) => ({
+            id: place.id,
+            name: place.name,
+            rating: place.rating ?? null,
+            reviews: place.userRatingCount ?? null,
+            address: place.address,
+            category: place.primaryType ?? null,
+            lat: place.latitude,
+            lng: place.longitude,
+            url: place.googleMapsUrl ?? null,
+          }));
+          return { ...point, places, error: null as string | null, reason: undefined as unknown };
+        } catch (error) {
+          return { ...point, places: [] as never[], error: errorText(error) as string | null, reason: error as unknown };
+        }
+      });
+      const failed = points.filter((point) => point.error);
+      // Every point failed: the first error as it came, so a bad key or empty balance reads as such.
+      if (failed.length === points.length && failed[0]) throw failed[0].reason;
+      return {
+        data: { keyword: i.keyword, center, size: i.size, spacingM: i.spacingM, points: points.map(({ reason: _reason, ...point }) => point) },
+        costUsd: sum(costUsd),
+        partial: failed.length > 0,
+      };
+    },
+  }),
+  define({
     name: "maps_place",
     title: "Business profile",
     description: "Full Google Business profile for a place ID: categories, hours, phone, website, rating, photos, amenities. $0.05.",
@@ -592,6 +708,40 @@ export const lookups: Lookup[] = [
   }),
 
   // ── AI ────────────────────────────────────────────────────────────────────
+  define({
+    name: "ai_citations",
+    title: "AI visibility check",
+    description:
+      "Ask one question to several AI assistants with web search on, and get each answer with the sources it cited, in order: links cleaned and redirects resolved, so citations can be compared across assistants. Token-priced per model, usually $0.03 to $0.30 each. Cached for a day.",
+    feature: "ai_visibility",
+    ttl: DAY,
+    input: z.object({
+      prompt: z.string().trim().min(3).max(2000),
+      models: z.array(z.string().min(3).max(100)).min(1).max(6),
+    }),
+    estimate: (i) => ({ min: sum(...i.models.map(() => 0.01)), max: null, formula: "token-priced per model; $0.01 minimum each" }),
+    run: async (yep, i, _project, { maxCostUsd }) => {
+      // As in ai_compare: with a ceiling, one model at a time, each reserving $0.03 for search.
+      let spent = 0;
+      const answers = await mapLimit(i.models, maxCostUsd == null ? 6 : 1, async (model) => {
+        if (maxCostUsd != null && spent + 0.03 > maxCostUsd) {
+          return { model, answer: "", sources: [] as { url: string; title?: string }[], costUsd: 0, error: `Skipped: the $${maxCostUsd.toFixed(2)} cost ceiling was reached` as string | null };
+        }
+        try {
+          const res = await yep.ai.chat({ model, messages: [{ role: "user", content: i.prompt }], webSearch: true, maxTokens: 1200 });
+          spent += res.costUsd;
+          const content = res.data.message.content;
+          const resolved = await Promise.all((res.data.sources ?? []).map(resolveCitation));
+          const sources = cleanSources(resolved.filter((source): source is { url: string; title?: string } => source !== null));
+          return { model, answer: typeof content === "string" ? content : "", sources, costUsd: res.costUsd, error: null as string | null };
+        } catch (error) {
+          return { model, answer: "", sources: [] as { url: string; title?: string }[], costUsd: 0, error: errorText(error) as string | null };
+        }
+      });
+      if (answers.every((answer) => answer.error)) throw new Error(answers[0]?.error ?? "Every model failed");
+      return { data: { prompt: i.prompt, answers }, costUsd: sum(...answers.map((a) => a.costUsd)), partial: answers.some((a) => a.error) };
+    },
+  }),
   define({
     name: "ai_compare",
     title: "Prompt explorer",

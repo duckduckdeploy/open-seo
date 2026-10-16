@@ -1,4 +1,4 @@
-import { BarChart3, FileSearch, Globe, Lightbulb, Link2, ListOrdered, Search, Swords } from "lucide-react";
+import { BarChart3, Bot, FileSearch, Globe, Grid3x3, Lightbulb, Link2, ListOrdered, Search, Swords } from "lucide-react";
 
 /** The standalone SEO tools, in the order the tools page and the sidebar show them. */
 export const TOOLS = [
@@ -9,6 +9,8 @@ export const TOOLS = [
   { slug: "page-analyser", title: "Page analyser", blurb: "One URL's authority, backlinks, traffic and on-page basics: title, description, headings and links.", icon: FileSearch, group: "Domains" },
   { slug: "backlink-checker", title: "Backlink checker", blurb: "Backlinks, referring domains, anchors and history of any domain or page, worldwide.", icon: Link2, group: "Domains" },
   { slug: "competitors", title: "Competitors", blurb: "Who competes with a site in Google, for its domain or for a list of keywords.", icon: Swords, group: "Domains" },
+  { slug: "ai-visibility-checker", title: "AI visibility checker", blurb: "Ask ChatGPT, Gemini, Claude and Perplexity one question and see which sites each cites, in order.", icon: Bot, group: "AI and local" },
+  { slug: "local-rank-checker", title: "Local rank checker", blurb: "Google Maps rankings for a keyword across a grid around any city, for every business at once.", icon: Grid3x3, group: "AI and local" },
   { slug: "competitors?tab=gap", title: "Keyword gap", blurb: "Keywords a competitor ranks for that a site does not, with both positions.", icon: BarChart3, group: "Domains" },
 ] as const;
 

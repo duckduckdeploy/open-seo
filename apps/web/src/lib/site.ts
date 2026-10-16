@@ -29,3 +29,6 @@ export const NAV_LINKS = [
   { href: '/pricing', label: 'Pricing' },
   { href: '/docs', label: 'Docs' },
 ] as const;
+
+/** A name inside a sentence: "Keyword overview" becomes "keyword overview"; "AI" and "SERP" keep their capitals. */
+export const inSentence = (name: string) => name.replace(/^[A-Z](?=[a-z])/, (letter) => letter.toLowerCase());

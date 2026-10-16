@@ -207,11 +207,50 @@ export const tour: TourStop[] = [
       },
     ],
   },
+  {
+    id: 'ai-visibility',
+    eyebrow: 'AI visibility checker',
+    title: 'See which sites AI assistants cite',
+    lede: 'Ask ChatGPT, Gemini, Claude and Perplexity the same question with web search on. Every source each one cites, in order, and whether your site is among them.',
+    points: ['Four assistants, one question', 'Citations in order', 'Your site cited and named'],
+    href: '/tools/ai-visibility-checker',
+    slides: [
+      {
+        name: 'ai-visibility-sites',
+        title: 'Most cited sites',
+        alt: 'The most cited sites, with the assistants that cite each one and their place in each list',
+        body: 'Every site any assistant cited, ranked by how many cite it and how high, with each assistant’s place for it.',
+      },
+      {
+        name: 'ai-visibility-order',
+        title: 'Citations in order',
+        alt: 'Four columns, one per assistant, listing the sources each cited in order',
+        body: 'One column per assistant, sources numbered as given. Your site is highlighted wherever it appears.',
+      },
+    ],
+  },
+  {
+    id: 'local-rank',
+    eyebrow: 'Local rank checker',
+    title: 'Who ranks on Google Maps, block by block',
+    lede: 'A grid of Maps searches across any city shows who holds the top places in each part of town, for every business at once.',
+    points: ['3 × 3 to 7 × 7 grids', 'Every business ranked', 'Any business’s grid, free'],
+    href: '/tools/local-rank-checker',
+    slides: [
+      {
+        name: 'local-rank-grid',
+        title: 'Local rank grid',
+        alt: 'A grid of rank numbers coloured green to red, next to the businesses that rank across the area',
+        body: 'Green for the top 3, amber for 4 to 10, red beyond. Click any business in the table to see its own grid.',
+      },
+    ],
+  },
 ];
 
 export const tourStop = (id: string) => tour.find((stop) => stop.id === id) as TourStop;
 
 /** The tool screens a feature page shows, by feature slug. */
 export const featureTour: Record<string, string[]> = {
-  'local-seo': ['local'],
+  'ai-visibility': ['ai-visibility'],
+  'local-seo': ['local-rank', 'local'],
 };

@@ -10,7 +10,7 @@ import { Screenshot } from '@/components/screenshot';
 import { ToolCards } from '@/components/tool-cards';
 import { getTool, tools } from '@/content/tools';
 import { pageMeta } from '@/lib/metadata';
-import { APP_URL, SITE_NAME, SITE_URL } from '@/lib/site';
+import { APP_URL, inSentence, SITE_NAME, SITE_URL } from '@/lib/site';
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
@@ -106,7 +106,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
               </ul>
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
                 <ButtonLink href={open} size="lg">
-                  Open {tool.name.toLowerCase()}
+                  Open {inSentence(tool.name)}
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </ButtonLink>
                 <ButtonLink href={tool.guide} variant="secondary" size="lg">
@@ -168,7 +168,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
             <div className="mx-auto max-w-3xl text-center">
               <p className="eyebrow">Use it to</p>
               <h2 id="uses-title" className="text-title mt-4">
-                What people use the {tool.name.toLowerCase()} for
+                What people use the {inSentence(tool.name)} for
               </h2>
             </div>
             <ul className="mx-auto mt-14 grid max-w-5xl grid-cols-1 gap-5 sm:grid-cols-2">
@@ -195,7 +195,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
           </div>
           <div className="mx-auto mt-12 max-w-3xl overflow-hidden rounded-lg border border-line">
             <table className="w-full border-collapse text-left">
-              <caption className="sr-only">What one {tool.name.toLowerCase()} search runs and costs</caption>
+              <caption className="sr-only">What one {inSentence(tool.name)} search runs and costs</caption>
               <thead>
                 <tr>
                   <th scope="col" className="border-b border-line bg-sunken px-5 py-3 text-xs font-semibold tracking-wide text-faint uppercase">

@@ -30,7 +30,7 @@ const textLink =
 const ledger = [
   { value: 'MIT', label: 'Open-source licence' },
   { value: '1', label: 'Docker command to self-host' },
-  { value: '61', label: 'MCP tools for your AI agent' },
+  { value: '63', label: 'MCP tools for your AI agent' },
   { value: String(AUDIT_CHECKS), label: 'Site audit checks, free' },
 ];
 
@@ -49,7 +49,7 @@ const control = [
   },
   {
     title: 'Agents on a leash',
-    body: 'Sixty MCP tools give your agent the whole workspace, and every paid call takes a ceiling: a call that could cost more than you agreed is refused before it starts.',
+    body: 'Sixty-three MCP tools give your agent the whole workspace, and every paid call takes a ceiling: a call that could cost more than you agreed is refused before it starts.',
   },
 ];
 

@@ -33,7 +33,7 @@ export const docPages: DocPage[] = [
   {
     slug: 'tutorials/seo-tools',
     title: 'The SEO tools, screen by screen',
-    description: 'Keyword overview, keyword ideas, SERP checker, domain overview, page analyser, backlinks and competitors, with what every part of each screen tells you.',
+    description: 'Keyword overview, keyword ideas, SERP checker, domain overview, page analyser, backlinks, competitors, AI visibility and local rank grids, with what every part of each screen tells you.',
     section: 'Tutorials',
   },
   {
@@ -105,7 +105,7 @@ export const docPages: DocPage[] = [
   {
     slug: 'mcp-tools',
     title: 'MCP tools',
-    description: 'All 61 tools the MCP server offers, what each one does, and which ones spend.',
+    description: 'All 63 tools the MCP server offers, what each one does, and which ones spend.',
     section: 'Reference',
   },
   {
