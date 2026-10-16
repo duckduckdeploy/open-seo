@@ -1,5 +1,5 @@
 import { and, eq, isNotNull, lt, lte, ne, or, sql } from "drizzle-orm";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import { nextRunAfter } from "../lib/pool";
 import { isRunInProgress } from "../lib/errors";
 import { failAiRun, startAiRun } from "../services/ai";
@@ -18,13 +18,13 @@ const RETRY_MS = 15 * 60_000;
 defineJob("scheduler.tick", 1, async (_data, log) => {
   const now = new Date();
 
-  const dueTrackers = await db
+  const dueTrackers = await dataDb
     .select()
     .from(schema.rankTrackers)
     .where(and(isNotNull(schema.rankTrackers.nextRunAt), lte(schema.rankTrackers.nextRunAt, now), ne(schema.rankTrackers.schedule, "manual")))
     .limit(200);
   for (const tracker of dueTrackers) {
-    const claimed = await db
+    const claimed = await dataDb
       .update(schema.rankTrackers)
       .set({ nextRunAt: nextRunAfter(tracker.schedule, tracker.nextRunAt ?? now, now) })
       .where(and(eq(schema.rankTrackers.id, tracker.id), lte(schema.rankTrackers.nextRunAt, now)))
@@ -37,20 +37,20 @@ defineJob("scheduler.tick", 1, async (_data, log) => {
       // A run already in progress (often a manual one): try again shortly rather than skipping a
       // whole period. No keywords: wait for the next period.
       if (isRunInProgress(error)) {
-        await db.update(schema.rankTrackers).set({ nextRunAt: new Date(now.getTime() + RETRY_MS) }).where(eq(schema.rankTrackers.id, tracker.id));
+        await dataDb.update(schema.rankTrackers).set({ nextRunAt: new Date(now.getTime() + RETRY_MS) }).where(eq(schema.rankTrackers.id, tracker.id));
       }
       log.info({ trackerId: tracker.id, reason: (error as Error).message }, "scheduled rank run not started");
     }
   }
 
-  const dueAi = await db
+  const dueAi = await dataDb
     .select({ settings: schema.aiSettings, project: schema.projects })
     .from(schema.aiSettings)
     .innerJoin(schema.projects, eq(schema.projects.id, schema.aiSettings.projectId))
     .where(and(isNotNull(schema.aiSettings.nextRunAt), lte(schema.aiSettings.nextRunAt, now), ne(schema.aiSettings.schedule, "manual")))
     .limit(200);
   for (const { settings, project } of dueAi) {
-    const claimed = await db
+    const claimed = await dataDb
       .update(schema.aiSettings)
       .set({ nextRunAt: nextRunAfter(settings.schedule, settings.nextRunAt ?? now, now) })
       .where(and(eq(schema.aiSettings.projectId, project.id), lte(schema.aiSettings.nextRunAt, now)))
@@ -61,7 +61,7 @@ defineJob("scheduler.tick", 1, async (_data, log) => {
       await dispatch("ai.run", { runId: run.id }, (message) => failAiRun(run.id, message));
     } catch (error) {
       if (isRunInProgress(error)) {
-        await db.update(schema.aiSettings).set({ nextRunAt: new Date(now.getTime() + RETRY_MS) }).where(eq(schema.aiSettings.projectId, project.id));
+        await dataDb.update(schema.aiSettings).set({ nextRunAt: new Date(now.getTime() + RETRY_MS) }).where(eq(schema.aiSettings.projectId, project.id));
       }
       log.info({ projectId: project.id, reason: (error as Error).message }, "scheduled AI run not started");
     }
@@ -75,12 +75,12 @@ defineJob("scheduler.tick", 1, async (_data, log) => {
  * one when no worker has picked it up in 6 hours. Long but live runs are left alone.
  */
 defineJob("maintenance.cleanup", 1, async () => {
-  await db.delete(schema.apiCache).where(lt(schema.apiCache.expiresAt, new Date()));
+  await dataDb.delete(schema.apiCache).where(lt(schema.apiCache.expiresAt, new Date()));
   await cleanupOAuth();
   const abandoned = { status: "failed" as const, error: "Interrupted before it finished", finishedAt: new Date() };
   const tables = [schema.rankRuns, schema.aiRuns, schema.audits, schema.geoGrids] as const;
   for (const table of tables) {
-    await db
+    await dataDb
       .update(table)
       .set(abandoned)
       .where(

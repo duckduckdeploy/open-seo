@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import { auth } from "./auth";
 import { sha256 } from "./crypto";
 import { AppError, notFound, unauthorized } from "./errors";
@@ -63,7 +63,7 @@ export async function requireSessionUser(request: FastifyRequest): Promise<Authe
 
 export async function requireProject(userId: string, projectId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(projectId)) throw notFound("Project");
-  const [project] = await db
+  const [project] = await dataDb
     .select()
     .from(schema.projects)
     .where(and(eq(schema.projects.id, projectId), eq(schema.projects.userId, userId)))

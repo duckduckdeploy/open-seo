@@ -2,7 +2,7 @@ import { RANK_DEPTH } from "@openseo/shared";
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { toDomain } from "../lib/domain";
 import { badRequest, notFound, parse, uuidParam } from "../lib/errors";
@@ -33,7 +33,7 @@ export async function rankRoutes(app: FastifyInstance) {
   app.get<{ Params: { projectId: string } }>("/projects/:projectId/trackers", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    const trackers = await db
+    const trackers = await dataDb
       .select({
         tracker: schema.rankTrackers,
         // Correlated subqueries name the outer table explicitly: a bare "id" would bind to the inner table.
@@ -57,7 +57,7 @@ export async function rankRoutes(app: FastifyInstance) {
     const hasPoint = input.latitude != null && input.longitude != null;
     if (!hasPoint && input.locationCode == null) throw badRequest("Choose a location or give coordinates");
     const domain = toDomain(input.domain);
-    const [tracker] = await db
+    const [tracker] = await dataDb
       .insert(schema.rankTrackers)
       .values({
         projectId: project.id,
@@ -77,7 +77,7 @@ export async function rankRoutes(app: FastifyInstance) {
       .returning();
     if (!tracker) throw new Error("Insert failed");
     if (input.keywords?.length) {
-      await db
+      await dataDb
         .insert(schema.rankKeywords)
         .values([...new Set(input.keywords)].map((keyword) => ({ trackerId: tracker.id, keyword })))
         .onConflictDoNothing();
@@ -89,7 +89,7 @@ export async function rankRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const { tracker } = await requireTracker(user.id, request.params.trackerId);
     const count = await activeKeywordCount(tracker.id);
-    const runs = await db
+    const runs = await dataDb
       .select()
       .from(schema.rankRuns)
       .where(eq(schema.rankRuns.trackerId, tracker.id))
@@ -109,7 +109,7 @@ export async function rankRoutes(app: FastifyInstance) {
       }),
       request.body,
     );
-    const [updated] = await db
+    const [updated] = await dataDb
       .update(schema.rankTrackers)
       .set({
         ...input,
@@ -124,7 +124,7 @@ export async function rankRoutes(app: FastifyInstance) {
   app.delete<{ Params: { trackerId: string } }>("/trackers/:trackerId", async (request) => {
     const user = await requireUser(request);
     const { tracker } = await requireTracker(user.id, request.params.trackerId);
-    await db.delete(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
+    await dataDb.delete(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
     return { ok: true };
   });
 
@@ -136,7 +136,7 @@ export async function rankRoutes(app: FastifyInstance) {
     const unique = [...new Set(keywords)];
     if (count + unique.length > MAX_KEYWORDS) throw badRequest(`A tracker holds up to ${MAX_KEYWORDS} keywords`);
     // A keyword removed earlier comes back with its history.
-    const added = await db
+    const added = await dataDb
       .insert(schema.rankKeywords)
       .values(unique.map((keyword) => ({ trackerId: tracker.id, keyword })))
       .onConflictDoUpdate({
@@ -153,7 +153,7 @@ export async function rankRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const { tracker } = await requireTracker(user.id, request.params.trackerId);
     const { ids } = parse(z.object({ ids: z.array(z.string().uuid()).min(1).max(1000) }), request.body);
-    const deleted = await db
+    const deleted = await dataDb
       .update(schema.rankKeywords)
       .set({ removedAt: new Date(), pinned: false })
       .where(and(eq(schema.rankKeywords.trackerId, tracker.id), inArray(schema.rankKeywords.id, ids), isNull(schema.rankKeywords.removedAt)))
@@ -165,7 +165,7 @@ export async function rankRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const { tracker } = await requireTracker(user.id, request.params.trackerId);
     const input = parse(z.object({ pinned: z.boolean().optional(), tags: z.array(z.string().trim().min(1).max(40)).max(10).optional() }), request.body);
-    const [updated] = await db
+    const [updated] = await dataDb
       .update(schema.rankKeywords)
       .set(input)
       .where(
@@ -191,7 +191,7 @@ export async function rankRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { runId: string } }>("/rank-runs/:runId", async (request) => {
     const user = await requireUser(request);
-    const [run] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, uuidParam(request.params.runId, "Run"))).limit(1);
+    const [run] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, uuidParam(request.params.runId, "Run"))).limit(1);
     if (!run) throw notFound("Run");
     await requireTracker(user.id, run.trackerId);
     return { ok: true, data: run };
@@ -199,10 +199,10 @@ export async function rankRoutes(app: FastifyInstance) {
 
   app.post<{ Params: { runId: string } }>("/rank-runs/:runId/cancel", async (request) => {
     const user = await requireUser(request);
-    const [run] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, uuidParam(request.params.runId, "Run"))).limit(1);
+    const [run] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, uuidParam(request.params.runId, "Run"))).limit(1);
     if (!run) throw notFound("Run");
     await requireTracker(user.id, run.trackerId);
-    await db
+    await dataDb
       .update(schema.rankRuns)
       .set({ status: "cancelled", finishedAt: new Date() })
       .where(and(eq(schema.rankRuns.id, run.id), inArray(schema.rankRuns.status, ["queued", "running"])));
@@ -230,7 +230,7 @@ export async function rankRoutes(app: FastifyInstance) {
       const user = await requireUser(request);
       const { tracker } = await requireTracker(user.id, request.params.trackerId);
       const chosen = parse(device.optional(), request.query.device) ?? tracker.devices[0] ?? "desktop";
-      const rows = await db
+      const rows = await dataDb
         .select()
         .from(schema.rankResults)
         .where(

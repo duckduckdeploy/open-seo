@@ -7,6 +7,7 @@ export const harness = {
   fake: undefined as unknown as FakeYepApi,
   google: undefined as unknown as FakeGoogle,
   pg: undefined as PGlite | undefined,
+  dataPg: undefined as PGlite | undefined,
   /** Jobs the API asked to run, in order. */
   enqueued: [] as { name: string; data: unknown }[],
   /** When true, enqueue throws, as if pg-boss could not be reached. */

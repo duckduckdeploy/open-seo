@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { toDomain } from "../lib/domain";
 import { parse } from "../lib/errors";
@@ -29,7 +29,7 @@ async function marketFields(input: { locationCode?: number; locationName?: strin
 export async function projectRoutes(app: FastifyInstance) {
   app.get("/projects", async (request) => {
     const user = await requireUser(request);
-    const rows = await db
+    const rows = await dataDb
       .select()
       .from(schema.projects)
       .where(eq(schema.projects.userId, user.id))
@@ -40,7 +40,7 @@ export async function projectRoutes(app: FastifyInstance) {
   app.post("/projects", async (request, reply) => {
     const user = await requireUser(request);
     const input = parse(projectInput, request.body);
-    const [project] = await db
+    const [project] = await dataDb
       .insert(schema.projects)
       .values({ ...input, ...(await marketFields(input)), domain: input.domain ? toDomain(input.domain) : null, userId: user.id })
       .returning();
@@ -60,7 +60,7 @@ export async function projectRoutes(app: FastifyInstance) {
       request.body,
     );
     // Re-derived whenever a code arrives without a country, which also repairs a stored country that is wrong.
-    const [updated] = await db
+    const [updated] = await dataDb
       .update(schema.projects)
       .set({ ...input, ...(await marketFields(input)), domain: input.domain === undefined ? undefined : input.domain ? toDomain(input.domain) : null })
       .where(eq(schema.projects.id, project.id))
@@ -71,7 +71,7 @@ export async function projectRoutes(app: FastifyInstance) {
   app.delete<{ Params: { projectId: string } }>("/projects/:projectId", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    await db.delete(schema.projects).where(and(eq(schema.projects.id, project.id), eq(schema.projects.userId, user.id)));
+    await dataDb.delete(schema.projects).where(and(eq(schema.projects.id, project.id), eq(schema.projects.userId, user.id)));
     return { ok: true };
   });
 }

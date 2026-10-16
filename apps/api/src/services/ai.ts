@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL_IDS } from "@openseo/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import type { AiBrandHit } from "../db/schema";
 import { analyseAnswer, brandKey, cleanSourceUrl, cleanSources, isBrandedPrompt, type TrackedBrand } from "../lib/brand-analysis";
 import { hostOf } from "../lib/domain";
@@ -12,15 +12,15 @@ type Project = typeof schema.projects.$inferSelect;
 type Settings = typeof schema.aiSettings.$inferSelect;
 
 export async function getAiSettings(project: Project): Promise<Settings> {
-  const [existing] = await db.select().from(schema.aiSettings).where(eq(schema.aiSettings.projectId, project.id)).limit(1);
+  const [existing] = await dataDb.select().from(schema.aiSettings).where(eq(schema.aiSettings.projectId, project.id)).limit(1);
   if (existing) return existing;
-  const [created] = await db
+  const [created] = await dataDb
     .insert(schema.aiSettings)
     .values({ projectId: project.id, brand: project.name, domain: project.domain, models: DEFAULT_MODEL_IDS, schedule: "manual" })
     .onConflictDoNothing()
     .returning();
   if (created) return created;
-  const [row] = await db.select().from(schema.aiSettings).where(eq(schema.aiSettings.projectId, project.id)).limit(1);
+  const [row] = await dataDb.select().from(schema.aiSettings).where(eq(schema.aiSettings.projectId, project.id)).limit(1);
   return row as Settings;
 }
 
@@ -31,7 +31,7 @@ export async function getAiSettings(project: Project): Promise<Settings> {
 /** Average cost of a successful answer per model, from this project's history. */
 async function modelAverages(projectId: string, models: string[]): Promise<Map<string, number>> {
   if (!models.length) return new Map();
-  const rows = await db
+  const rows = await dataDb
     .select({ model: schema.aiAnswers.model, avg: sql<number>`avg(${schema.aiAnswers.costUsd})::float8` })
     .from(schema.aiAnswers)
     .where(and(eq(schema.aiAnswers.projectId, projectId), inArray(schema.aiAnswers.model, models), sql`${schema.aiAnswers.error} is null`))
@@ -55,13 +55,13 @@ export async function startAiRun(project: Project, trigger: "manual" | "schedule
   const settings = await getAiSettings(project);
   if (!settings.brand.trim()) throw conflict("Set your brand name before running");
   if (!settings.models.length) throw conflict("Select at least one model");
-  const [{ count } = { count: 0 }] = await db
+  const [{ count } = { count: 0 }] = await dataDb
     .select({ count: sql<number>`count(*)::int` })
     .from(schema.aiPrompts)
     .where(and(eq(schema.aiPrompts.projectId, project.id), eq(schema.aiPrompts.active, true)));
   if (!count) throw conflict("Add at least one active prompt before running");
   try {
-    const [run] = await db.insert(schema.aiRuns).values({ projectId: project.id, trigger, maxCostUsd: maxCostUsd ?? null }).returning();
+    const [run] = await dataDb.insert(schema.aiRuns).values({ projectId: project.id, trigger, maxCostUsd: maxCostUsd ?? null }).returning();
     return run as typeof schema.aiRuns.$inferSelect;
   } catch (error) {
     if (isUniqueViolation(error)) throw runInProgress("A run is already in progress for this project");
@@ -71,19 +71,19 @@ export async function startAiRun(project: Project, trigger: "manual" | "schedule
 
 /** Marks a queued or running run failed; a finished or cancelled one is left as it is. */
 export async function failAiRun(runId: string, message: string) {
-  await db
+  await dataDb
     .update(schema.aiRuns)
     .set({ status: "failed", error: message, finishedAt: new Date() })
     .where(and(eq(schema.aiRuns.id, runId), inArray(schema.aiRuns.status, ["queued", "running"])));
 }
 
 export async function processAiRun(runId: string) {
-  const [run] = await db.select().from(schema.aiRuns).where(eq(schema.aiRuns.id, runId)).limit(1);
+  const [run] = await dataDb.select().from(schema.aiRuns).where(eq(schema.aiRuns.id, runId)).limit(1);
   if (!run || run.status !== "queued") return;
-  const [project] = await db.select().from(schema.projects).where(eq(schema.projects.id, run.projectId)).limit(1);
+  const [project] = await dataDb.select().from(schema.projects).where(eq(schema.projects.id, run.projectId)).limit(1);
   if (!project) return;
   const settings = await getAiSettings(project);
-  const prompts = await db
+  const prompts = await dataDb
     .select()
     .from(schema.aiPrompts)
     .where(and(eq(schema.aiPrompts.projectId, project.id), eq(schema.aiPrompts.active, true)));
@@ -91,7 +91,7 @@ export async function processAiRun(runId: string) {
 
   // Claimed only while still queued, so a cancel that lands first is not overwritten.
   const now = new Date();
-  const [claimed] = await db
+  const [claimed] = await dataDb
     .update(schema.aiRuns)
     .set({ status: "running", startedAt: now, heartbeatAt: now, total: jobs.length })
     .where(and(eq(schema.aiRuns.id, runId), eq(schema.aiRuns.status, "queued")))
@@ -100,7 +100,7 @@ export async function processAiRun(runId: string) {
 
   // The schedule is not touched here: the scheduler advanced it when it claimed the run.
   const finish = async (status: "completed" | "failed" | "cancelled", error?: string) => {
-    await db
+    await dataDb
       .update(schema.aiRuns)
       .set({ status, error: error ?? null, finishedAt: new Date() })
       .where(and(eq(schema.aiRuns.id, runId), inArray(schema.aiRuns.status, ["queued", "running"])));
@@ -139,7 +139,7 @@ export async function processAiRun(runId: string) {
       return;
     }
     if (index % 8 === 0) {
-      const [current] = await db.select({ status: schema.aiRuns.status }).from(schema.aiRuns).where(eq(schema.aiRuns.id, runId));
+      const [current] = await dataDb.select({ status: schema.aiRuns.status }).from(schema.aiRuns).where(eq(schema.aiRuns.id, runId));
       if (current?.status === "cancelled") {
         cancelled = true;
         return;
@@ -166,7 +166,7 @@ export async function processAiRun(runId: string) {
       const sources = cleanSources((res.data.sources ?? []).map((s) => ({ url: s.url, title: s.title })));
       const hits: AiBrandHit[] = analyseAnswer(answer, sources, brands);
       const ownHit = hits[0];
-      await db.insert(schema.aiAnswers).values({
+      await dataDb.insert(schema.aiAnswers).values({
         ...base,
         answer,
         sources,
@@ -177,14 +177,14 @@ export async function processAiRun(runId: string) {
         costUsd: res.costUsd,
       });
       spent += res.costUsd;
-      await db
+      await dataDb
         .update(schema.aiRuns)
         .set({ done: sql`${schema.aiRuns.done} + 1`, heartbeatAt: new Date(), costUsd: sql`round((${schema.aiRuns.costUsd} + ${res.costUsd})::numeric, 4)::float8` })
         .where(eq(schema.aiRuns.id, runId));
     } catch (error) {
       if (isFatalForRun(error)) fatal = errorMessage(error);
-      await db.insert(schema.aiAnswers).values({ ...base, error: errorMessage(error) });
-      await db
+      await dataDb.insert(schema.aiAnswers).values({ ...base, error: errorMessage(error) });
+      await dataDb
         .update(schema.aiRuns)
         .set({ done: sql`${schema.aiRuns.done} + 1`, failed: sql`${schema.aiRuns.failed} + 1`, heartbeatAt: new Date() })
         .where(eq(schema.aiRuns.id, runId));
@@ -287,16 +287,16 @@ export function compareRuns(latest: RunRow, latestRows: AnswerRow[], previous: R
  * left out rather than counted as absent.
  */
 export async function aiResults(projectId: string, trendRuns = 12) {
-  const runs = await db
+  const runs = await dataDb
     .select()
     .from(schema.aiRuns)
     .where(and(eq(schema.aiRuns.projectId, projectId), eq(schema.aiRuns.status, "completed")))
     .orderBy(desc(schema.aiRuns.createdAt))
     .limit(trendRuns);
-  const prompts = await db.select().from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, projectId)).orderBy(schema.aiPrompts.createdAt);
+  const prompts = await dataDb.select().from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, projectId)).orderBy(schema.aiPrompts.createdAt);
   if (!runs.length) return { runs: [], prompts, latest: null, comparison: null };
 
-  const answers: AnswerRow[] = await db
+  const answers: AnswerRow[] = await dataDb
     .select({
       id: schema.aiAnswers.id,
       runId: schema.aiAnswers.runId,

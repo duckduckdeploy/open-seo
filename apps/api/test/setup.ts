@@ -3,7 +3,8 @@
  *  - a fake YepAPI on a random port (src/testing/fake-yepapi.ts)
  *  - a fake Google (OAuth, Search Console, Analytics) on another (src/testing/fake-google.ts)
  *  - the environment the API validates at import time
- *  - `../src/db` replaced by an in-memory Postgres (PGlite) with the real migrations applied
+ *  - `../src/db` replaced by two in-memory Postgres databases (PGlite), core and project data,
+ *    each with its real migrations applied
  *  - `../src/jobs/queue` replaced by a recorder, so tests run job handlers themselves
  *  - YepAPI's keyless location lookup answered locally
  */
@@ -39,12 +40,20 @@ vi.mock("../src/db", async () => {
   const { drizzle } = await import("drizzle-orm/pglite");
   const { migrate } = await import("drizzle-orm/pglite/migrator");
   const schema = await import("../src/db/schema");
+  const coreSchema = await import("../src/db/core-schema");
+  const dataSchema = await import("../src/db/data-schema");
+  // Two separate in-memory databases, as in production: a query sent to the wrong one fails.
   const client = new PGlite();
-  const db = drizzle(client, { schema });
+  const dataClient = new PGlite();
+  const db = drizzle(client, { schema: coreSchema });
+  const dataDb = drizzle(dataClient, { schema: dataSchema });
   await migrate(db, { migrationsFolder: fileURLToPath(new URL("../drizzle", import.meta.url)) });
+  await migrate(dataDb, { migrationsFolder: fileURLToPath(new URL("../drizzle-data", import.meta.url)) });
   const { harness } = await import("./harness");
   harness.pg = client;
-  return { db, schema, pool: { end: async () => {} } };
+  harness.dataPg = dataClient;
+  const end = { end: async () => {} };
+  return { db, dataDb, schema, pool: end, dataPool: end, dataDatabaseUrl: () => "postgres://unused-in-tests" };
 });
 
 vi.mock("../src/jobs/queue", async () => {
@@ -84,4 +93,5 @@ afterAll(async () => {
   await fake.close();
   await google.close();
   await harness.pg?.close();
+  await harness.dataPg?.close();
 });

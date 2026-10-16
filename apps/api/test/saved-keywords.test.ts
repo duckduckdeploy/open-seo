@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, schema } from "../src/db";
 import { readyUser } from "./client";
 import { harness } from "./harness";
 
@@ -57,7 +57,7 @@ describe("saved keywords", () => {
     const a = await readyUser();
     const b = await readyUser();
     await a.api.ok("POST", `/projects/${a.project.id}/saved-keywords`, { keywords: [{ keyword: "secret" }] });
-    const [row] = await db.select().from(schema.savedKeywords).where(eq(schema.savedKeywords.projectId, a.project.id));
+    const [row] = await dataDb.select().from(schema.savedKeywords).where(eq(schema.savedKeywords.projectId, a.project.id));
     expect(await b.api.ok("POST", `/projects/${b.project.id}/saved-keywords/delete`, { ids: [row?.id] })).toEqual({ deleted: 0 });
     expect((await a.api.ok("GET", `/projects/${a.project.id}/saved-keywords`)).total).toBe(1);
   });

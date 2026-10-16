@@ -1,7 +1,7 @@
 import { RANK_CHECK_USD, RANK_DEPTH } from "@openseo/shared";
 import type { GoogleSerpData } from "@openseo/yepapi";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import type { Device, SerpCompetitor } from "../db/schema";
 import { hostMatches, hostOf } from "../lib/domain";
 import { conflict, isUniqueViolation, notFound, runInProgress } from "../lib/errors";
@@ -12,7 +12,7 @@ type Tracker = typeof schema.rankTrackers.$inferSelect;
 
 export async function requireTracker(userId: string, trackerId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(trackerId)) throw notFound("Tracker");
-  const [row] = await db
+  const [row] = await dataDb
     .select({ tracker: schema.rankTrackers, project: schema.projects })
     .from(schema.rankTrackers)
     .innerJoin(schema.projects, eq(schema.projects.id, schema.rankTrackers.projectId))
@@ -68,14 +68,14 @@ export function parseSerp(data: GoogleSerpData, domain: string, requestedDepth: 
 const isTracked = (trackerId: string) => and(eq(schema.rankKeywords.trackerId, trackerId), isNull(schema.rankKeywords.removedAt));
 
 export async function activeKeywordCount(trackerId: string): Promise<number> {
-  const [{ count } = { count: 0 }] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rankKeywords).where(isTracked(trackerId));
+  const [{ count } = { count: 0 }] = await dataDb.select({ count: sql<number>`count(*)::int` }).from(schema.rankKeywords).where(isTracked(trackerId));
   return count;
 }
 
 export async function startRankRun(trackerId: string, trigger: "manual" | "schedule" | "api") {
   if (!(await activeKeywordCount(trackerId))) throw conflict("Add at least one keyword before running a check");
   try {
-    const [run] = await db.insert(schema.rankRuns).values({ trackerId, trigger }).returning();
+    const [run] = await dataDb.insert(schema.rankRuns).values({ trackerId, trigger }).returning();
     return run as typeof schema.rankRuns.$inferSelect;
   } catch (error) {
     // The partial unique index allows one queued or running run per tracker.
@@ -86,16 +86,16 @@ export async function startRankRun(trackerId: string, trigger: "manual" | "sched
 
 /** Marks a queued or running check failed; a finished or cancelled one is left as it is. */
 export async function failRankRun(runId: string, message: string) {
-  await db
+  await dataDb
     .update(schema.rankRuns)
     .set({ status: "failed", error: message, finishedAt: new Date() })
     .where(and(eq(schema.rankRuns.id, runId), inArray(schema.rankRuns.status, ["queued", "running"])));
 }
 
 export async function processRankRun(runId: string) {
-  const [run] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, runId)).limit(1);
+  const [run] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, runId)).limit(1);
   if (!run || run.status !== "queued") return;
-  const [row] = await db
+  const [row] = await dataDb
     .select({ tracker: schema.rankTrackers, userId: schema.projects.userId })
     .from(schema.rankTrackers)
     .innerJoin(schema.projects, eq(schema.projects.id, schema.rankTrackers.projectId))
@@ -103,12 +103,12 @@ export async function processRankRun(runId: string) {
     .limit(1);
   if (!row) return;
   const { tracker, userId } = row;
-  const keywords = await db.select().from(schema.rankKeywords).where(isTracked(tracker.id));
+  const keywords = await dataDb.select().from(schema.rankKeywords).where(isTracked(tracker.id));
   const checks =keywords.flatMap((keyword) => tracker.devices.map((device) => ({ keyword, device })));
 
   // Claimed only while still queued, so a cancel that lands first is not overwritten.
   const now = new Date();
-  const [claimed] = await db
+  const [claimed] = await dataDb
     .update(schema.rankRuns)
     .set({ status: "running", startedAt: now, heartbeatAt: now, total: checks.length })
     .where(and(eq(schema.rankRuns.id, runId), eq(schema.rankRuns.status, "queued")))
@@ -117,7 +117,7 @@ export async function processRankRun(runId: string) {
 
   // The schedule is not touched here: the scheduler advanced it when it claimed the run.
   const finish = async (status: "completed" | "failed" | "cancelled", error?: string) => {
-    await db
+    await dataDb
       .update(schema.rankRuns)
       .set({ status, error: error ?? null, finishedAt: new Date() })
       .where(and(eq(schema.rankRuns.id, runId), inArray(schema.rankRuns.status, ["queued", "running"])));
@@ -145,7 +145,7 @@ export async function processRankRun(runId: string) {
   await mapLimit(checks, 4, async ({ keyword, device }, index) => {
     if (fatal || cancelled) return;
     if (index % 10 === 0) {
-      const [current] = await db.select({ status: schema.rankRuns.status }).from(schema.rankRuns).where(eq(schema.rankRuns.id, runId));
+      const [current] = await dataDb.select({ status: schema.rankRuns.status }).from(schema.rankRuns).where(eq(schema.rankRuns.id, runId));
       if (current?.status === "cancelled") {
         cancelled = true;
         return;
@@ -163,15 +163,15 @@ export async function processRankRun(runId: string) {
         ...where,
       });
       const parsed = parseSerp(res.data, tracker.domain, RANK_DEPTH);
-      await db.insert(schema.rankResults).values({ ...base, ...parsed, costUsd: res.costUsd });
-      await db
+      await dataDb.insert(schema.rankResults).values({ ...base, ...parsed, costUsd: res.costUsd });
+      await dataDb
         .update(schema.rankRuns)
         .set({ done: sql`${schema.rankRuns.done} + 1`, heartbeatAt: new Date(), costUsd: sql`round((${schema.rankRuns.costUsd} + ${res.costUsd})::numeric, 4)::float8` })
         .where(eq(schema.rankRuns.id, runId));
     } catch (error) {
       if (isFatalForRun(error)) fatal = errorMessage(error);
-      await db.insert(schema.rankResults).values({ ...base, checkedDepth: 0, error: errorMessage(error) });
-      await db
+      await dataDb.insert(schema.rankResults).values({ ...base, checkedDepth: 0, error: errorMessage(error) });
+      await dataDb
         .update(schema.rankRuns)
         .set({ done: sql`${schema.rankRuns.done} + 1`, failed: sql`${schema.rankRuns.failed} + 1`, heartbeatAt: new Date() })
         .where(eq(schema.rankRuns.id, runId));
@@ -191,19 +191,19 @@ type ResultRow = typeof schema.rankResults.$inferSelect;
 
 /** Latest position per keyword, change against the previous run, and a short history for the matrix. */
 export async function trackerResults(trackerId: string, device: Device, historyRuns = 12) {
-  const runs = await db
+  const runs = await dataDb
     .select({ id: schema.rankRuns.id, finishedAt: schema.rankRuns.finishedAt, costUsd: schema.rankRuns.costUsd })
     .from(schema.rankRuns)
     .where(and(eq(schema.rankRuns.trackerId, trackerId), eq(schema.rankRuns.status, "completed")))
     .orderBy(desc(schema.rankRuns.createdAt))
     .limit(historyRuns);
-  const keywords = await db
+  const keywords = await dataDb
     .select()
     .from(schema.rankKeywords)
     .where(isTracked(trackerId))
     .orderBy(desc(schema.rankKeywords.pinned), schema.rankKeywords.keyword);
   const results = runs.length
-    ? await db
+    ? await dataDb
         .select()
         .from(schema.rankResults)
         .where(and(inArray(schema.rankResults.runId, runs.map((r) => r.id)), eq(schema.rankResults.device, device)))
@@ -259,14 +259,14 @@ export async function trackerResults(trackerId: string, device: Device, historyR
 
 /** Competing domains seen in the latest run's results, by how often they appear in the top 10. */
 export async function trackerCompetitors(trackerId: string, device: Device) {
-  const [latest] = await db
+  const [latest] = await dataDb
     .select({ id: schema.rankRuns.id })
     .from(schema.rankRuns)
     .where(and(eq(schema.rankRuns.trackerId, trackerId), eq(schema.rankRuns.status, "completed")))
     .orderBy(desc(schema.rankRuns.createdAt))
     .limit(1);
   if (!latest) return [];
-  const results = await db
+  const results = await dataDb
     .select({ competitors: schema.rankResults.competitors })
     .from(schema.rankResults)
     .where(and(eq(schema.rankResults.runId, latest.id), eq(schema.rankResults.device, device)));

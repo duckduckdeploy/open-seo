@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { createYepApi, isYepApiError, pricing, type YepApi, type YepEndpoint } from "@openseo/yepapi";
 import { and, eq, gt, gte, sql } from "drizzle-orm";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import { env } from "../env";
 import { decrypt } from "./crypto";
 import { AppError } from "./errors";
@@ -178,7 +178,7 @@ export async function cached<T>(
 ): Promise<Cached<T>> {
   const key = `${name}:${createHash("sha256").update(JSON.stringify(params)).digest("hex").slice(0, 32)}`;
   if (!refresh && ttlSeconds > 0) {
-    const [hit] = await db
+    const [hit] = await dataDb
       .select()
       .from(schema.apiCache)
       .where(and(eq(schema.apiCache.userId, userId), eq(schema.apiCache.key, key), gt(schema.apiCache.expiresAt, new Date())))
@@ -195,7 +195,7 @@ export async function cached<T>(
       createdAt: now,
       expiresAt: new Date(now.getTime() + ttlSeconds * 1000),
     };
-    await db
+    await dataDb
       .insert(schema.apiCache)
       .values({ userId, key, ...values })
       .onConflictDoUpdate({ target: [schema.apiCache.userId, schema.apiCache.key], set: values });

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, schema } from "../src/db";
 import { processAiRun } from "../src/services/ai";
 import { readyUser } from "./client";
 import { harness } from "./harness";
@@ -21,7 +21,7 @@ async function setUp(webSearch = true) {
   return { ...user, base };
 }
 
-const runRow = async (id: string) => (await db.select().from(schema.aiRuns).where(eq(schema.aiRuns.id, id)))[0];
+const runRow = async (id: string) => (await dataDb.select().from(schema.aiRuns).where(eq(schema.aiRuns.id, id)))[0];
 
 describe("AI visibility setup", () => {
   it("starts from the project with the curated default models", async () => {
@@ -50,7 +50,7 @@ describe("AI visibility setup", () => {
 
   it("will not start without a brand, a model or an active prompt", async () => {
     const { api, base, project } = await setUp();
-    await db.update(schema.aiPrompts).set({ active: false }).where(eq(schema.aiPrompts.projectId, project.id));
+    await dataDb.update(schema.aiPrompts).set({ active: false }).where(eq(schema.aiPrompts.projectId, project.id));
     const res = await api.post(`${base}/runs`);
     expect(res.status).toBe(409);
     expect(res.body.error?.message).toMatch(/active prompt/);
@@ -170,7 +170,7 @@ describe("AI visibility runs", () => {
     const { api, base, project } = await setUp();
     const run = await api.ok("POST", `${base}/runs`);
     await processAiRun(run.id);
-    const stored = await db.select().from(schema.aiAnswers).where(eq(schema.aiAnswers.projectId, project.id));
+    const stored = await dataDb.select().from(schema.aiAnswers).where(eq(schema.aiAnswers.projectId, project.id));
     const urls = stored.flatMap((a) => a.sources.map((s) => s.url));
     expect(urls.length).toBeGreaterThan(0);
     expect(urls.some((u) => /utm_|#/.test(u))).toBe(false);

@@ -46,11 +46,13 @@ const update = `cd openseo
 git pull
 docker compose up -d --build        # add --profile https on a server`;
 
-const backup = `# Back up the database to a file
+const backup = `# Back up both databases to files: accounts and keys, then project data
 docker compose exec -T postgres pg_dump -U openseo openseo | gzip > openseo-$(date +%F).sql.gz
+docker compose exec -T postgres pg_dump -U openseo openseo_data | gzip > openseo_data-$(date +%F).sql.gz
 
-# Restore it into an empty install
-gunzip -c openseo-2026-10-15.sql.gz | docker compose exec -T postgres psql -U openseo openseo`;
+# Restore them into an empty install
+gunzip -c openseo-2026-10-15.sql.gz | docker compose exec -T postgres psql -U openseo openseo
+gunzip -c openseo_data-2026-10-15.sql.gz | docker compose exec -T postgres psql -U openseo openseo_data`;
 
 const fromSource = `pnpm install
 docker compose up -d postgres       # or point DATABASE_URL at your own Postgres
@@ -168,6 +170,11 @@ export default function SelfHostingPage() {
       <h2 id="update">Updating</h2>
       <CodeBlock label="Terminal" code={update} />
       <p>Database changes are applied automatically when the API starts. Back up first if your data matters to you.</p>
+      <p>
+        OpenSEO keeps two Postgres databases: <code>openseo</code> for accounts, keys, usage and billing, and{' '}
+        <code>openseo_data</code> for everything projects track and research. The second is created on first start, on
+        the same server. To keep it elsewhere, set <code>DATA_DATABASE_URL</code>.
+      </p>
 
       <h2 id="backup">Backups</h2>
       <CodeBlock label="Terminal" code={backup} />

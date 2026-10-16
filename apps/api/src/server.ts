@@ -1,5 +1,5 @@
 import { buildApp } from "./app";
-import { pool } from "./db";
+import { dataPool, pool } from "./db";
 import { env } from "./env";
 import { startWorker, stopWorker } from "./jobs/queue";
 
@@ -15,7 +15,7 @@ async function shutdown() {
   closing = true;
   await app.close();
   await stopWorker();
-  await pool.end();
+  await Promise.all([pool.end(), dataPool.end()]);
   process.exit(0);
 }
 process.on("SIGINT", shutdown);

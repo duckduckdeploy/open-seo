@@ -2,7 +2,7 @@ import { ISSUE_CATALOG } from "@openseo/crawler";
 import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { AppError, badRequest, notFound, parse, runInProgress, uuidParam } from "../lib/errors";
 import { dispatch } from "../jobs/dispatch";
@@ -26,7 +26,7 @@ export async function auditRoutes(app: FastifyInstance) {
   app.get<{ Params: { projectId: string } }>("/projects/:projectId/audits", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    const rows = await db
+    const rows = await dataDb
       .select()
       .from(schema.audits)
       .where(eq(schema.audits.projectId, project.id))
@@ -45,7 +45,7 @@ export async function auditRoutes(app: FastifyInstance) {
     if (request.query.dryRun === "1") return { ok: true, data: { estimate, dryRun: true } };
     const startUrl = input.startUrl ?? project.domain;
     if (!startUrl) throw badRequest("Give a start URL, or set the project's website");
-    const audit = await db.transaction(async (tx) => {
+    const audit = await dataDb.transaction(async (tx) => {
       // One user's audits are counted under a lock, so parallel requests cannot pass the caps together.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`audit:${user.id}`}))`);
       const ownAudits = and(
@@ -77,7 +77,7 @@ export async function auditRoutes(app: FastifyInstance) {
   app.get<{ Params: { auditId: string } }>("/audits/:auditId", async (request) => {
     const user = await requireUser(request);
     const { audit } = await requireAudit(user.id, request.params.auditId);
-    const groups = await db
+    const groups = await dataDb
       .select({ type: schema.auditIssues.type, severity: schema.auditIssues.severity, count: sql<number>`count(*)::int` })
       .from(schema.auditIssues)
       .where(eq(schema.auditIssues.auditId, audit.id))
@@ -115,8 +115,8 @@ export async function auditRoutes(app: FastifyInstance) {
       query.severity ? eq(schema.auditIssues.severity, query.severity) : undefined,
     );
     const [rows, [count]] = await Promise.all([
-      db.select().from(schema.auditIssues).where(where).orderBy(severityRank, asc(schema.auditIssues.type), asc(schema.auditIssues.url)).limit(query.limit).offset(query.offset),
-      db.select({ total: sql<number>`count(*)::int` }).from(schema.auditIssues).where(where),
+      dataDb.select().from(schema.auditIssues).where(where).orderBy(severityRank, asc(schema.auditIssues.type), asc(schema.auditIssues.url)).limit(query.limit).offset(query.offset),
+      dataDb.select({ total: sql<number>`count(*)::int` }).from(schema.auditIssues).where(where),
     ]);
     return { ok: true, data: { total: count?.total ?? 0, issues: rows } };
   });
@@ -146,7 +146,7 @@ export async function auditRoutes(app: FastifyInstance) {
       depth: sql`${schema.auditPages.depth} desc nulls last`,
     }[query.sort];
     const [rows, [count]] = await Promise.all([
-      db
+      dataDb
         .select({
           id: schema.auditPages.id,
           url: schema.auditPages.url,
@@ -163,7 +163,7 @@ export async function auditRoutes(app: FastifyInstance) {
         .orderBy(order, asc(schema.auditPages.url))
         .limit(query.limit)
         .offset(query.offset),
-      db.select({ total: sql<number>`count(*)::int` }).from(schema.auditPages).where(where),
+      dataDb.select({ total: sql<number>`count(*)::int` }).from(schema.auditPages).where(where),
     ]);
     return { ok: true, data: { total: count?.total ?? 0, pages: rows } };
   });
@@ -172,13 +172,13 @@ export async function auditRoutes(app: FastifyInstance) {
   app.get<{ Params: { auditId: string; pageId: string } }>("/audits/:auditId/pages/:pageId", async (request) => {
     const user = await requireUser(request);
     const { audit } = await requireAudit(user.id, request.params.auditId);
-    const [page] = await db
+    const [page] = await dataDb
       .select()
       .from(schema.auditPages)
       .where(and(eq(schema.auditPages.auditId, audit.id), eq(schema.auditPages.id, uuidParam(request.params.pageId, "Page"))))
       .limit(1);
     if (!page) throw notFound("Page");
-    const issues = await db
+    const issues = await dataDb
       .select()
       .from(schema.auditIssues)
       .where(and(eq(schema.auditIssues.auditId, audit.id), eq(schema.auditIssues.url, page.url)))
@@ -189,7 +189,7 @@ export async function auditRoutes(app: FastifyInstance) {
   app.post<{ Params: { auditId: string } }>("/audits/:auditId/cancel", async (request) => {
     const user = await requireUser(request);
     const { audit } = await requireAudit(user.id, request.params.auditId);
-    await db
+    await dataDb
       .update(schema.audits)
       .set({ status: "cancelled", finishedAt: new Date() })
       .where(and(eq(schema.audits.id, audit.id), inArray(schema.audits.status, ["queued", "running"])));
@@ -199,7 +199,7 @@ export async function auditRoutes(app: FastifyInstance) {
   app.delete<{ Params: { auditId: string } }>("/audits/:auditId", async (request) => {
     const user = await requireUser(request);
     const { audit } = await requireAudit(user.id, request.params.auditId);
-    await db.delete(schema.audits).where(eq(schema.audits.id, audit.id));
+    await dataDb.delete(schema.audits).where(eq(schema.audits.id, audit.id));
     return { ok: true };
   });
 }

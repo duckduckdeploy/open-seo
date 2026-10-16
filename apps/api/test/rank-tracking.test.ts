@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, db, schema } from "../src/db";
 import { processRankRun } from "../src/services/rank";
 import { readyUser, signUp } from "./client";
 import { harness } from "./harness";
@@ -17,7 +17,7 @@ async function newTracker(user: Awaited<ReturnType<typeof readyUser>>, extra: Re
   });
 }
 
-const runRow = async (id: string) => (await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, id)))[0];
+const runRow = async (id: string) => (await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, id)))[0];
 
 describe("trackers", () => {
   it("creates a tracker for free, with de-duplicated lowercase keywords and its price", async () => {
@@ -146,7 +146,7 @@ describe("rank runs", () => {
     harness.queueDown = false;
     expect(res.status).toBe(503);
     expect(res.body.error?.code).toBe("queue_unavailable");
-    const [failed] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.trackerId, tracker.id));
+    const [failed] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.trackerId, tracker.id));
     expect(failed).toMatchObject({ status: "failed" });
     expect((await user.api.post(`/trackers/${tracker.id}/runs`)).status).toBe(202);
   });
@@ -184,7 +184,7 @@ describe("rank runs", () => {
   it("pins keywords and updates tracker settings", async () => {
     const user = await readyUser();
     const tracker = await newTracker(user);
-    const [keyword] = await db.select().from(schema.rankKeywords).where(eq(schema.rankKeywords.trackerId, tracker.id));
+    const [keyword] = await dataDb.select().from(schema.rankKeywords).where(eq(schema.rankKeywords.trackerId, tracker.id));
     expect((await user.api.ok("PATCH", `/trackers/${tracker.id}/keywords/${keyword!.id}`, { pinned: true })).pinned).toBe(true);
     // Depth is not a setting: every check reads the top 100.
     const updated = await user.api.ok("PATCH", `/trackers/${tracker.id}`, { schedule: "weekly", depth: 10, devices: ["mobile", "mobile"] });
@@ -204,16 +204,16 @@ describe("scheduler and cleanup", () => {
     const user = await readyUser();
     const tracker = await newTracker(user, { schedule: "weekly" });
     const due = new Date(Date.now() - 60_000);
-    await db.update(schema.rankTrackers).set({ nextRunAt: due }).where(eq(schema.rankTrackers.id, tracker.id));
+    await dataDb.update(schema.rankTrackers).set({ nextRunAt: due }).where(eq(schema.rankTrackers.id, tracker.id));
     await tick();
-    const [run] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.trackerId, tracker.id));
+    const [run] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.trackerId, tracker.id));
     expect(run).toMatchObject({ status: "queued", trigger: "schedule" });
-    const [moved] = await db.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
+    const [moved] = await dataDb.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
     // Anchored on the due time, not on when the tick ran, so a late tick does not shift the schedule.
     expect(moved!.nextRunAt!.getTime()).toBe(due.getTime() + 7 * 24 * 3600_000);
     // Finishing the run does not move it again.
     await processRankRun(run!.id);
-    const [after] = await db.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
+    const [after] = await dataDb.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
     expect(after!.nextRunAt!.getTime()).toBe(due.getTime() + 7 * 24 * 3600_000);
   });
 
@@ -225,7 +225,7 @@ describe("scheduler and cleanup", () => {
     expect(first.getUTCHours()).toBeLessThan(10);
     const run = await user.api.ok("POST", `/trackers/${tracker.id}/runs`);
     await processRankRun(run.id);
-    const [after] = await db.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
+    const [after] = await dataDb.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
     expect(after!.nextRunAt!.getTime()).toBe(first.getTime());
   });
 
@@ -233,9 +233,9 @@ describe("scheduler and cleanup", () => {
     const user = await readyUser();
     const tracker = await newTracker(user, { schedule: "weekly" });
     await user.api.ok("POST", `/trackers/${tracker.id}/runs`);
-    await db.update(schema.rankTrackers).set({ nextRunAt: new Date(Date.now() - 60_000) }).where(eq(schema.rankTrackers.id, tracker.id));
+    await dataDb.update(schema.rankTrackers).set({ nextRunAt: new Date(Date.now() - 60_000) }).where(eq(schema.rankTrackers.id, tracker.id));
     await tick();
-    const [retry] = await db.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
+    const [retry] = await dataDb.select().from(schema.rankTrackers).where(eq(schema.rankTrackers.id, tracker.id));
     const wait = retry!.nextRunAt!.getTime() - Date.now();
     expect(wait).toBeGreaterThan(14 * 60_000);
     expect(wait).toBeLessThan(16 * 60_000);
@@ -247,8 +247,8 @@ describe("scheduler and cleanup", () => {
     const live = await newTracker(user);
     const stuck = await user.api.ok("POST", `/trackers/${quiet.id}/runs`);
     const busy = await user.api.ok("POST", `/trackers/${live.id}/runs`);
-    await db.execute(sql`update rank_runs set status = 'running', created_at = now() - interval '8 hours', heartbeat_at = now() - interval '45 minutes' where id = ${stuck.id}`);
-    await db.execute(sql`update rank_runs set status = 'running', created_at = now() - interval '8 hours', heartbeat_at = now() - interval '2 minutes' where id = ${busy.id}`);
+    await dataDb.execute(sql`update rank_runs set status = 'running', created_at = now() - interval '8 hours', heartbeat_at = now() - interval '45 minutes' where id = ${stuck.id}`);
+    await dataDb.execute(sql`update rank_runs set status = 'running', created_at = now() - interval '8 hours', heartbeat_at = now() - interval '2 minutes' where id = ${busy.id}`);
     await cleanup();
     expect((await runRow(stuck.id))?.status).toBe("failed");
     expect((await runRow(busy.id))?.status).toBe("running");

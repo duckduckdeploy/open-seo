@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, db, schema } from "../src/db";
 import { client, readyUser, signUp, YEP_KEY } from "./client";
 import { harness } from "./harness";
 
@@ -23,7 +23,7 @@ describe("projects", () => {
 
   it("repairs a stored country when the market is saved again", async () => {
     const { api, project } = await readyUser();
-    await db.update(schema.projects).set({ locationCode: 2276, locationName: "Germany", country: "us" }).where(eq(schema.projects.id, project.id));
+    await dataDb.update(schema.projects).set({ locationCode: 2276, locationName: "Germany", country: "us" }).where(eq(schema.projects.id, project.id));
     const saved = await api.ok("PATCH", `/projects/${project.id}`, { locationCode: 2276, locationName: "Germany" });
     expect(saved.country).toBe("de");
   });
@@ -59,7 +59,7 @@ describe("projects", () => {
     await api.ok("POST", `/projects/${project.id}/saved-keywords`, { keywords: [{ keyword: "a" }] });
     await api.ok("DELETE", `/projects/${project.id}`);
     expect((await api.get(`/projects/${project.id}`)).status).toBe(404);
-    expect(await db.select().from(schema.savedKeywords).where(eq(schema.savedKeywords.projectId, project.id))).toEqual([]);
+    expect(await dataDb.select().from(schema.savedKeywords).where(eq(schema.savedKeywords.projectId, project.id))).toEqual([]);
   });
 });
 

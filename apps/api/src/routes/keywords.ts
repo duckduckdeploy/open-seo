@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { badRequest, parse } from "../lib/errors";
 import { getYep } from "../lib/yep";
@@ -57,15 +57,15 @@ export async function keywordRoutes(app: FastifyInstance) {
     );
     const column = sortColumns[query.sort];
     const [rows, [count], tags] = await Promise.all([
-      db
+      dataDb
         .select()
         .from(schema.savedKeywords)
         .where(where)
         .orderBy(sql`${query.order === "asc" ? asc(column) : desc(column)} nulls last`, asc(schema.savedKeywords.keyword))
         .limit(query.limit)
         .offset(query.offset),
-      db.select({ total: sql<number>`count(*)::int` }).from(schema.savedKeywords).where(where),
-      db
+      dataDb.select({ total: sql<number>`count(*)::int` }).from(schema.savedKeywords).where(where),
+      dataDb
         .select({ tag: sql<string>`unnest(${schema.savedKeywords.tags})`, count: sql<number>`count(*)::int` })
         .from(schema.savedKeywords)
         .where(eq(schema.savedKeywords.projectId, project.id))
@@ -82,7 +82,7 @@ export async function keywordRoutes(app: FastifyInstance) {
     const input = parse(saveInput, request.body);
     const now = new Date();
     const unique = [...new Map(input.keywords.map((k) => [k.keyword, k])).values()];
-    const saved = await db
+    const saved = await dataDb
       .insert(schema.savedKeywords)
       .values(
         unique.map((k) => ({
@@ -129,7 +129,7 @@ export async function keywordRoutes(app: FastifyInstance) {
       request.body,
     );
     if (!input.add.length && !input.remove.length) throw badRequest("Nothing to add or remove");
-    await db
+    await dataDb
       .update(schema.savedKeywords)
       .set({
         tags: sql`(select coalesce(array_agg(distinct t), '{}') from unnest(${schema.savedKeywords.tags} || ${textArray(input.add)}) as t where not (t = any(${textArray(input.remove)})))`,
@@ -142,7 +142,7 @@ export async function keywordRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
     const { ids } = parse(z.object({ ids: z.array(z.string().uuid()).min(1).max(1000) }), request.body);
-    const deleted = await db
+    const deleted = await dataDb
       .delete(schema.savedKeywords)
       .where(and(eq(schema.savedKeywords.projectId, project.id), inArray(schema.savedKeywords.id, ids)))
       .returning({ id: schema.savedKeywords.id });
@@ -157,11 +157,11 @@ export async function keywordRoutes(app: FastifyInstance) {
     const project = await requireProject(user.id, request.params.projectId);
     const inProject = eq(schema.savedKeywords.projectId, project.id);
     const [rows, [all]] = await Promise.all([
-      db
+      dataDb
         .select({ id: schema.savedKeywords.id, keyword: schema.savedKeywords.keyword })
         .from(schema.savedKeywords)
         .where(and(inProject, eq(schema.savedKeywords.locationCode, project.locationCode), eq(schema.savedKeywords.language, project.language))),
-      db.select({ total: sql<number>`count(*)::int` }).from(schema.savedKeywords).where(inProject),
+      dataDb.select({ total: sql<number>`count(*)::int` }).from(schema.savedKeywords).where(inProject),
     ]);
     // Each batch of up to 700 keywords is one call: $0.03 + $0.03 per 100, rounded up to the cent.
     const batches = Array.from({ length: Math.ceil(rows.length / 700) }, (_, i) => Math.min(700, rows.length - i * 700));
@@ -185,7 +185,7 @@ export async function keywordRoutes(app: FastifyInstance) {
       for (const row of batch) {
         const m = byKeyword.get(row.keyword);
         if (!m) continue;
-        await db
+        await dataDb
           .update(schema.savedKeywords)
           .set({
             volume: m.volume ?? null,

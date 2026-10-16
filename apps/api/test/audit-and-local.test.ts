@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, schema } from "../src/db";
 import { processAudit, withoutNul } from "../src/services/audit";
 import { processGrid } from "../src/services/geogrid";
 import { readyUser } from "./client";
@@ -99,7 +99,7 @@ describe("geo-grid", () => {
     const cancelled = await api.ok("POST", `/projects/${project.id}/geo-grids`, grid());
     await api.ok("POST", `/geo-grids/${cancelled.id}/cancel`);
     await processGrid(cancelled.id);
-    const [row] = await db.select().from(schema.geoGrids).where(eq(schema.geoGrids.id, cancelled.id));
+    const [row] = await dataDb.select().from(schema.geoGrids).where(eq(schema.geoGrids.id, cancelled.id));
     expect(row).toMatchObject({ status: "cancelled", done: 0 });
   });
 });

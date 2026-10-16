@@ -36,6 +36,13 @@
       "when": 1792186098111,
       "tag": "0004_drop_free_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792188203186,
+      "tag": "0005_move_project_data",
+      "breakpoints": true
     }
   ]
 }

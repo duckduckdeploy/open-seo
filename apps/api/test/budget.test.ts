@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { db, schema } from "../src/db";
+import { dataDb, schema } from "../src/db";
 import { getYep, monthSpend } from "../src/lib/yep";
 import { processRankRun } from "../src/services/rank";
 import { readyUser } from "./client";
@@ -62,7 +62,7 @@ describe("monthly budget", () => {
     const run = await api.ok("POST", `/trackers/${tracker.id}/runs`);
     await processRankRun(run.id);
 
-    const [stored] = await db.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, run.id));
+    const [stored] = await dataDb.select().from(schema.rankRuns).where(eq(schema.rankRuns.id, run.id));
     expect(stored?.status).toBe("failed");
     expect(stored?.error).toMatch(/spending limit/);
     // Checks already in flight (four at a time, $0.10 each) may complete, so the month ends a little over.

@@ -11,7 +11,7 @@
  */
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { and, eq, like, lt, sql } from "drizzle-orm";
-import { db, schema } from "../db";
+import { dataDb, db, schema } from "../db";
 import type { GoogleProvider } from "../db/schema";
 import { env } from "../env";
 import { decrypt, encrypt } from "../lib/crypto";
@@ -263,20 +263,25 @@ async function ownAccount(userId: string, accountId: string, provider: GooglePro
   return account;
 }
 
-/** Removes a grant and every project connection that used it. Returns how many projects lost one. */
+/**
+ * Removes a grant and every project connection that used it. Returns how many projects lost one.
+ * The connections (project database) go first, then the grant (core database): if the second step
+ * failed, the grant would be left without connections, never connections without a grant.
+ */
 export async function removeAccount(userId: string, accountId: string): Promise<{ projects: number }> {
-  return db.transaction(async (tx) => {
-    const [account] = await tx
-      .select({ id: schema.googleAccounts.id })
-      .from(schema.googleAccounts)
-      .where(and(eq(schema.googleAccounts.id, accountId), eq(schema.googleAccounts.userId, userId)))
-      .limit(1);
-    if (!account) throw notFound("Google account");
+  const [account] = await db
+    .select({ id: schema.googleAccounts.id })
+    .from(schema.googleAccounts)
+    .where(and(eq(schema.googleAccounts.id, accountId), eq(schema.googleAccounts.userId, userId)))
+    .limit(1);
+  if (!account) throw notFound("Google account");
+  const lost = await dataDb.transaction(async (tx) => {
     const gsc = await tx.delete(schema.gscConnections).where(eq(schema.gscConnections.googleAccountId, account.id)).returning({ id: schema.gscConnections.projectId });
     const ga4 = await tx.delete(schema.ga4Connections).where(eq(schema.ga4Connections.googleAccountId, account.id)).returning({ id: schema.ga4Connections.projectId });
-    await tx.delete(schema.googleAccounts).where(eq(schema.googleAccounts.id, account.id));
-    return { projects: new Set([...gsc, ...ga4].map((row) => row.id)).size };
+    return new Set([...gsc, ...ga4].map((row) => row.id)).size;
   });
+  await db.delete(schema.googleAccounts).where(eq(schema.googleAccounts.id, account.id));
+  return { projects: lost };
 }
 
 export type GscSite = { siteUrl: string; permissionLevel: string; verified: boolean };
@@ -296,7 +301,7 @@ export async function connectGsc(project: Project, userId: string, accountId: st
   // Unverified users can see a property in the list but read no data from it.
   if (!site.verified) throw badRequest("This Google account has no verified access to that property");
   const values = { projectId: project.id, googleAccountId: accountId, siteUrl };
-  await db.insert(schema.gscConnections).values(values).onConflictDoUpdate({ target: schema.gscConnections.projectId, set: values });
+  await dataDb.insert(schema.gscConnections).values(values).onConflictDoUpdate({ target: schema.gscConnections.projectId, set: values });
   return values;
 }
 
@@ -336,62 +341,58 @@ export async function connectGa4(project: Project, userId: string, accountId: st
     timeZone: details.timeZone ?? null,
     currencyCode: details.currencyCode ?? null,
   };
-  await db.insert(schema.ga4Connections).values(values).onConflictDoUpdate({ target: schema.ga4Connections.projectId, set: values });
+  await dataDb.insert(schema.ga4Connections).values(values).onConflictDoUpdate({ target: schema.ga4Connections.projectId, set: values });
   return values;
 }
 
 export async function disconnect(project: Project, provider: GoogleProvider) {
   const table = provider === "gsc" ? schema.gscConnections : schema.ga4Connections;
-  await db.delete(table).where(eq(table.projectId, project.id));
+  await dataDb.delete(table).where(eq(table.projectId, project.id));
+}
+
+/** The Google account a connection reads through (core database), by id. */
+async function accountById(id: string) {
+  const [account] = await db.select().from(schema.googleAccounts).where(eq(schema.googleAccounts.id, id)).limit(1);
+  return account ?? null;
 }
 
 /** The project's connections, with the email of the Google account each one reads through. */
 export async function connections(project: Project) {
-  const [gsc] = await db
-    .select({ siteUrl: schema.gscConnections.siteUrl, accountId: schema.gscConnections.googleAccountId, email: schema.googleAccounts.email, createdAt: schema.gscConnections.createdAt })
-    .from(schema.gscConnections)
-    .innerJoin(schema.googleAccounts, eq(schema.googleAccounts.id, schema.gscConnections.googleAccountId))
-    .where(eq(schema.gscConnections.projectId, project.id))
-    .limit(1);
-  const [ga4] = await db
-    .select({
-      propertyId: schema.ga4Connections.propertyId,
-      displayName: schema.ga4Connections.displayName,
-      timeZone: schema.ga4Connections.timeZone,
-      currencyCode: schema.ga4Connections.currencyCode,
-      accountId: schema.ga4Connections.googleAccountId,
-      email: schema.googleAccounts.email,
-      createdAt: schema.ga4Connections.createdAt,
-    })
-    .from(schema.ga4Connections)
-    .innerJoin(schema.googleAccounts, eq(schema.googleAccounts.id, schema.ga4Connections.googleAccountId))
-    .where(eq(schema.ga4Connections.projectId, project.id))
-    .limit(1);
-  return { gsc: gsc ?? null, ga4: ga4 ?? null };
+  const [gscRow] = await dataDb.select().from(schema.gscConnections).where(eq(schema.gscConnections.projectId, project.id)).limit(1);
+  const [ga4Row] = await dataDb.select().from(schema.ga4Connections).where(eq(schema.ga4Connections.projectId, project.id)).limit(1);
+  const gscAccount = gscRow ? await accountById(gscRow.googleAccountId) : null;
+  const ga4Account = ga4Row ? await accountById(ga4Row.googleAccountId) : null;
+  // A connection whose grant is gone counts as not connected, as the join used to.
+  const gsc = gscRow && gscAccount ? { siteUrl: gscRow.siteUrl, accountId: gscRow.googleAccountId, email: gscAccount.email, createdAt: gscRow.createdAt } : null;
+  const ga4 =
+    ga4Row && ga4Account
+      ? {
+          propertyId: ga4Row.propertyId,
+          displayName: ga4Row.displayName,
+          timeZone: ga4Row.timeZone,
+          currencyCode: ga4Row.currencyCode,
+          accountId: ga4Row.googleAccountId,
+          email: ga4Account.email,
+          createdAt: ga4Row.createdAt,
+        }
+      : null;
+  return { gsc, ga4 };
 }
 
 async function gscFor(project: Project) {
-  const [row] = await db
-    .select({ connection: schema.gscConnections, account: schema.googleAccounts })
-    .from(schema.gscConnections)
-    .innerJoin(schema.googleAccounts, eq(schema.googleAccounts.id, schema.gscConnections.googleAccountId))
-    .where(eq(schema.gscConnections.projectId, project.id))
-    .limit(1);
-  if (!row) throw notConnected("gsc");
+  const [connection] = await dataDb.select().from(schema.gscConnections).where(eq(schema.gscConnections.projectId, project.id)).limit(1);
+  const account = connection ? await accountById(connection.googleAccountId) : null;
+  if (!connection || !account) throw notConnected("gsc");
   config();
-  return row;
+  return { connection, account };
 }
 
 async function ga4For(project: Project) {
-  const [row] = await db
-    .select({ connection: schema.ga4Connections, account: schema.googleAccounts })
-    .from(schema.ga4Connections)
-    .innerJoin(schema.googleAccounts, eq(schema.googleAccounts.id, schema.ga4Connections.googleAccountId))
-    .where(eq(schema.ga4Connections.projectId, project.id))
-    .limit(1);
-  if (!row) throw notConnected("ga4");
+  const [connection] = await dataDb.select().from(schema.ga4Connections).where(eq(schema.ga4Connections.projectId, project.id)).limit(1);
+  const account = connection ? await accountById(connection.googleAccountId) : null;
+  if (!connection || !account) throw notConnected("ga4");
   config();
-  return row;
+  return { connection, account };
 }
 
 // ── Search Console reports ──────────────────────────────────────────────────
@@ -726,7 +727,7 @@ export async function searchOpportunities(project: Project, range: Range = "last
   const warnings: string[] = [];
   let analytics: Map<string, { sessions: number; keyEventRate: number; engagementRate: number }> | null = null;
   let useKeyEvents = false;
-  const [ga4] = await db.select().from(schema.ga4Connections).where(eq(schema.ga4Connections.projectId, project.id)).limit(1);
+  const [ga4] = await dataDb.select().from(schema.ga4Connections).where(eq(schema.ga4Connections.projectId, project.id)).limit(1);
   if (ga4) {
     const pages = await landingPages(project, range, "organic", 1000);
     useKeyEvents = pages.rows.some((r) => Number(r.keyEvents) > 0);

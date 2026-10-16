@@ -3,6 +3,9 @@ import { z } from "zod";
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().min(1),
+  // Project data (trackers, rankings, audits, AI runs…) lives in its own database. Unset: the same
+  // server and credentials as DATABASE_URL, database name + "_data", created if missing.
+  DATA_DATABASE_URL: z.string().min(1).optional(),
   API_PORT: z.coerce.number().default(4100),
   API_URL: z.string().url().default("http://localhost:4100"),
   APP_URL: z.string().url().default("http://localhost:3200"),

@@ -2,7 +2,7 @@ import { MODEL_CATALOG } from "@openseo/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { toDomain } from "../lib/domain";
 import { AppError, badRequest, notFound, parse, uuidParam } from "../lib/errors";
@@ -33,8 +33,8 @@ export async function aiRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
     const settings = await getAiSettings(project);
-    const prompts = await db.select().from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, project.id)).orderBy(schema.aiPrompts.createdAt);
-    const [activeRun] = await db
+    const prompts = await dataDb.select().from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, project.id)).orderBy(schema.aiPrompts.createdAt);
+    const [activeRun] = await dataDb
       .select()
       .from(schema.aiRuns)
       .where(and(eq(schema.aiRuns.projectId, project.id), inArray(schema.aiRuns.status, ["queued", "running"])))
@@ -54,7 +54,7 @@ export async function aiRoutes(app: FastifyInstance) {
       // Unknown IDs are allowed (the catalog is a snapshot) but must look like provider/model.
       if (unknown.some((m) => !/^[a-z0-9-]+\/[a-z0-9._:-]+$/i.test(m))) throw badRequest("Model IDs look like provider/model");
     }
-    const [updated] = await db
+    const [updated] = await dataDb
       .update(schema.aiSettings)
       .set({
         ...input,
@@ -75,11 +75,11 @@ export async function aiRoutes(app: FastifyInstance) {
       z.object({ prompts: z.array(z.string().trim().min(3).max(1000)).min(1).max(100), topic: z.string().trim().max(80).optional() }),
       request.body,
     );
-    const existing = await db.select({ prompt: schema.aiPrompts.prompt }).from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, project.id));
+    const existing = await dataDb.select({ prompt: schema.aiPrompts.prompt }).from(schema.aiPrompts).where(eq(schema.aiPrompts.projectId, project.id));
     const have = new Set(existing.map((e) => e.prompt.toLowerCase()));
     const fresh = [...new Set(prompts)].filter((p) => !have.has(p.toLowerCase()));
     if (existing.length + fresh.length > MAX_PROMPTS) throw badRequest(`A project holds up to ${MAX_PROMPTS} prompts`);
-    if (fresh.length) await db.insert(schema.aiPrompts).values(fresh.map((prompt) => ({ projectId: project.id, prompt, topic })));
+    if (fresh.length) await dataDb.insert(schema.aiPrompts).values(fresh.map((prompt) => ({ projectId: project.id, prompt, topic })));
     return { ok: true, data: { added: fresh.length, skipped: prompts.length - fresh.length } };
   });
 
@@ -87,7 +87,7 @@ export async function aiRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
     const input = parse(z.object({ active: z.boolean().optional(), topic: z.string().trim().max(80).nullable().optional() }), request.body);
-    const [updated] = await db
+    const [updated] = await dataDb
       .update(schema.aiPrompts)
       .set(input)
       .where(and(eq(schema.aiPrompts.projectId, project.id), eq(schema.aiPrompts.id, uuidParam(request.params.promptId, "Prompt"))))
@@ -100,7 +100,7 @@ export async function aiRoutes(app: FastifyInstance) {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
     const { ids } = parse(z.object({ ids: z.array(z.string().uuid()).min(1).max(200) }), request.body);
-    await db.delete(schema.aiPrompts).where(and(eq(schema.aiPrompts.projectId, project.id), inArray(schema.aiPrompts.id, ids)));
+    await dataDb.delete(schema.aiPrompts).where(and(eq(schema.aiPrompts.projectId, project.id), inArray(schema.aiPrompts.id, ids)));
     return { ok: true };
   });
 
@@ -150,7 +150,7 @@ export async function aiRoutes(app: FastifyInstance) {
     const { maxCostUsd } = parse(z.object({ maxCostUsd: z.number().positive().max(100000).optional() }), request.body ?? {});
     if (maxCostUsd != null) {
       const settings = await getAiSettings(project);
-      const [{ count } = { count: 0 }] = await db
+      const [{ count } = { count: 0 }] = await dataDb
         .select({ count: sql<number>`count(*)::int` })
         .from(schema.aiPrompts)
         .where(and(eq(schema.aiPrompts.projectId, project.id), eq(schema.aiPrompts.active, true)));
@@ -173,7 +173,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.get<{ Params: { projectId: string; runId: string } }>("/projects/:projectId/ai/runs/:runId", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    const [run] = await db
+    const [run] = await dataDb
       .select()
       .from(schema.aiRuns)
       .where(and(eq(schema.aiRuns.projectId, project.id), eq(schema.aiRuns.id, uuidParam(request.params.runId, "Run"))))
@@ -185,7 +185,7 @@ export async function aiRoutes(app: FastifyInstance) {
   app.post<{ Params: { projectId: string; runId: string } }>("/projects/:projectId/ai/runs/:runId/cancel", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    await db
+    await dataDb
       .update(schema.aiRuns)
       .set({ status: "cancelled", finishedAt: new Date() })
       .where(and(eq(schema.aiRuns.projectId, project.id), eq(schema.aiRuns.id, uuidParam(request.params.runId, "Run")), inArray(schema.aiRuns.status, ["queued", "running"])));
@@ -202,13 +202,13 @@ export async function aiRoutes(app: FastifyInstance) {
   app.get<{ Params: { projectId: string; promptId: string } }>("/projects/:projectId/ai/prompts/:promptId/answers", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    const [prompt] = await db
+    const [prompt] = await dataDb
       .select()
       .from(schema.aiPrompts)
       .where(and(eq(schema.aiPrompts.projectId, project.id), eq(schema.aiPrompts.id, uuidParam(request.params.promptId, "Prompt"))))
       .limit(1);
     if (!prompt) throw notFound("Prompt");
-    const answers = await db
+    const answers = await dataDb
       .select()
       .from(schema.aiAnswers)
       .where(eq(schema.aiAnswers.promptId, prompt.id))

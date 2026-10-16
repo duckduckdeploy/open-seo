@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { db, schema } from "../db";
+import { dataDb, schema } from "../db";
 import { requireProject, requireUser } from "../lib/context";
 import { parse } from "../lib/errors";
 import { dispatch } from "../jobs/dispatch";
@@ -21,7 +21,7 @@ export async function localRoutes(app: FastifyInstance) {
   app.get<{ Params: { projectId: string } }>("/projects/:projectId/geo-grids", async (request) => {
     const user = await requireUser(request);
     const project = await requireProject(user.id, request.params.projectId);
-    const rows = await db.select().from(schema.geoGrids).where(eq(schema.geoGrids.projectId, project.id)).orderBy(desc(schema.geoGrids.createdAt)).limit(100);
+    const rows = await dataDb.select().from(schema.geoGrids).where(eq(schema.geoGrids.projectId, project.id)).orderBy(desc(schema.geoGrids.createdAt)).limit(100);
     return { ok: true, data: rows };
   });
 
@@ -36,7 +36,7 @@ export async function localRoutes(app: FastifyInstance) {
     }
     const input = parse(gridInput, request.body);
     const estimate = estimateGrid(input.size);
-    const [grid] = await db.insert(schema.geoGrids).values({ projectId: project.id, ...input }).returning();
+    const [grid] = await dataDb.insert(schema.geoGrids).values({ projectId: project.id, ...input }).returning();
     if (!grid) throw new Error("Insert failed");
     await dispatch("geogrid.run", { gridId: grid.id }, (message) => failGrid(grid.id, message));
     return reply.status(202).send({ ok: true, data: { ...grid, estimate } });
@@ -45,7 +45,7 @@ export async function localRoutes(app: FastifyInstance) {
   app.get<{ Params: { gridId: string } }>("/geo-grids/:gridId", async (request) => {
     const user = await requireUser(request);
     const { grid } = await requireGrid(user.id, request.params.gridId);
-    const points = await db
+    const points = await dataDb
       .select()
       .from(schema.geoGridPoints)
       .where(eq(schema.geoGridPoints.gridId, grid.id))
@@ -57,7 +57,7 @@ export async function localRoutes(app: FastifyInstance) {
   app.post<{ Params: { gridId: string } }>("/geo-grids/:gridId/cancel", async (request) => {
     const user = await requireUser(request);
     const { grid } = await requireGrid(user.id, request.params.gridId);
-    await db
+    await dataDb
       .update(schema.geoGrids)
       .set({ status: "cancelled", finishedAt: new Date() })
       .where(and(eq(schema.geoGrids.id, grid.id), inArray(schema.geoGrids.status, ["queued", "running"])));
@@ -67,7 +67,7 @@ export async function localRoutes(app: FastifyInstance) {
   app.delete<{ Params: { gridId: string } }>("/geo-grids/:gridId", async (request) => {
     const user = await requireUser(request);
     const { grid } = await requireGrid(user.id, request.params.gridId);
-    await db.delete(schema.geoGrids).where(eq(schema.geoGrids.id, grid.id));
+    await dataDb.delete(schema.geoGrids).where(eq(schema.geoGrids.id, grid.id));
     return { ok: true };
   });
 }
