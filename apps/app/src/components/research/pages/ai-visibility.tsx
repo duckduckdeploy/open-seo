@@ -25,6 +25,25 @@ const ASSISTANTS = CURATED_MODELS.map((model) => ({ key: model.assistant.toLower
 const DEFAULT_KEYS = ASSISTANTS.filter((assistant) => assistant.default).map((assistant) => assistant.key);
 const byModel = new Map(ASSISTANTS.map((assistant) => [assistant.id, assistant]));
 const nameOf = (model: string) => byModel.get(model)?.assistant ?? model;
+const keyOf = (model: string) => byModel.get(model)?.key ?? null;
+
+/** Single-colour logos are drawn in the text colour, so they show in light and dark themes alike. */
+const MONO_LOGOS = new Set(["chatgpt", "grok"]);
+
+/**
+ * An assistant's logo (from Lobe Icons, MIT: public/ai-icons/LICENSE.md). Decorative: the name is
+ * always written next to it. An assistant without a logo shows nothing.
+ */
+function AssistantIcon({ model, className = "size-4" }: { model: string; className?: string }) {
+  const key = keyOf(model);
+  if (!key) return null;
+  const src = `/ai-icons/${key}.svg`;
+  if (MONO_LOGOS.has(key)) {
+    const mask = `url(${src}) center / contain no-repeat`;
+    return <span aria-hidden className={cx("inline-block shrink-0 bg-current", className)} style={{ mask, WebkitMask: mask }} />;
+  }
+  return <img src={src} alt="" aria-hidden className={cx("inline-block shrink-0", className)} />;
+}
 /** Roughly what one answer with web search cost when last measured: a guide, not a quote. */
 const TYPICAL: Record<string, number> = { chatgpt: 0.17, gemini: 0.06, claude: 0.12, perplexity: 0.03, grok: 0.28 };
 
@@ -157,7 +176,8 @@ export function AiVisibility({ project }: { project: Project }) {
       render: (row) => (
         <span className="flex flex-wrap gap-1">
           {row.cites.map((cite) => (
-            <span key={cite.model} className="inline-flex items-center gap-1 rounded border border-line px-1.5 py-0.5 text-[11px]">
+            <span key={cite.model} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface py-0.5 pr-2 pl-1 text-[11px]" title={`${nameOf(cite.model)}: source #${cite.position}`}>
+              <AssistantIcon model={cite.model} className="size-3.5" />
               {nameOf(cite.model)} <span className="font-mono text-muted">#{cite.position}</span>
             </span>
           ))}
@@ -207,8 +227,12 @@ export function AiVisibility({ project }: { project: Project }) {
                   const next = on ? chosen.filter((key) => key !== assistant.key) : [...chosen, assistant.key];
                   if (next.length) nav({ ai: next.join(",") === DEFAULT_KEYS.join(",") ? null : ASSISTANTS.filter((a) => next.includes(a.key)).map((a) => a.key).join(",") }, { replace: true });
                 }}
-                className={cx("rounded-full border px-3 py-1 text-[13px]", on ? "border-ink bg-ink text-bg" : "border-line text-muted hover:border-ink hover:text-ink")}
+                className={cx(
+                  "inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-2 text-[13px] transition-colors",
+                  on ? "border-accent bg-accent/10 font-medium text-ink" : "border-line text-muted opacity-70 hover:border-ink hover:text-ink hover:opacity-100",
+                )}
               >
+                <AssistantIcon model={assistant.id} />
                 {assistant.assistant}
               </button>
             );
@@ -278,7 +302,10 @@ export function AiVisibility({ project }: { project: Project }) {
               <div className="flex flex-wrap gap-x-8 gap-y-3 p-4">
                 {yours.map((y) => (
                   <div key={y.model} className="text-[13px]">
-                    <p className="font-medium">{nameOf(y.model)}</p>
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <AssistantIcon model={y.model} />
+                      {nameOf(y.model)}
+                    </p>
                     <p className="text-muted">
                       {y.cited ? <span className="text-pos">cited #{y.cited}</span> : "not cited"} · {y.mentioned ? <span className="text-pos">named</span> : "not named"}
                     </p>
@@ -310,7 +337,10 @@ export function AiVisibility({ project }: { project: Project }) {
               {answers.map((answer) => (
                 <div key={answer.model} className="min-w-0 rounded-xl border border-line bg-surface">
                   <div className="flex items-center justify-between border-b border-line px-4 py-3">
-                    <h3 className="font-display text-sm font-semibold">{nameOf(answer.model)}</h3>
+                    <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                      <AssistantIcon model={answer.model} />
+                      {nameOf(answer.model)}
+                    </h3>
                     <span className="font-mono text-xs text-muted">{answer.error ? "failed" : `${answer.sources.length} sources`}</span>
                   </div>
                   {answer.error ? (
@@ -352,7 +382,7 @@ export function AiVisibility({ project }: { project: Project }) {
             <h2 className="mb-3 font-display text-base font-semibold">The answers</h2>
             <div className="grid gap-4 lg:grid-cols-2">
               {answered.map((answer) => (
-                <AnswerCard key={answer.model} name={nameOf(answer.model)} answer={answer.answer} highlight={tracking ? yours.find((y) => y.model === answer.model)?.mentioned : undefined} />
+                <AnswerCard key={answer.model} model={answer.model} name={nameOf(answer.model)} answer={answer.answer} highlight={tracking ? yours.find((y) => y.model === answer.model)?.mentioned : undefined} />
               ))}
             </div>
           </section>
@@ -372,12 +402,15 @@ function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: st
   );
 }
 
-function AnswerCard({ name, answer, highlight }: { name: string; answer: string; highlight?: boolean }) {
+function AnswerCard({ model, name, answer, highlight }: { model: string; name: string; answer: string; highlight?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-xl border border-line bg-surface p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="font-display text-sm font-semibold">{name}</h3>
+        <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+          <AssistantIcon model={model} />
+          {name}
+        </h3>
         {highlight !== undefined && <Badge tone={highlight ? "pos" : "neutral"}>{highlight ? "names you" : "does not name you"}</Badge>}
       </div>
       <div className={cx("relative overflow-hidden", !open && "max-h-56")}>
