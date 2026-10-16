@@ -35,55 +35,56 @@ const tone: Record<Line['kind'], string> = {
 export function AgentFold() {
   return (
     <section aria-labelledby="agents-title" className="container-page py-20 md:py-28 xl:py-32">
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] lg:gap-16">
-        <div>
-          <SectionHeader
-            eyebrow="Agents and MCP"
-            id="agents-title"
-            title="Give your AI agent SEO skills"
-            lede="Connect your agent in two minutes, then use ready-made skills or just ask. Every paid call shows its price first and stays under the limit you set."
-          />
-          <ul className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {AGENT_SKILLS.map((skill) => (
-              <li key={skill.name} className="rounded-md border border-line bg-surface px-5 py-4">
-                <p className="font-mono text-sm font-semibold text-accent-text">/{skill.name}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{skill.summary}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-8 text-[0.9375rem] text-muted">
-            Works with <span className="text-ink">{AGENT_CLIENTS.slice(0, -1).join(', ')}</span> and{' '}
-            <span className="text-ink">{AGENT_CLIENTS.at(-1)}</span>, and any client that connects to an MCP server.
-          </p>
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <CopyPromptButton text={setupPrompt} />
-            <Link href="/docs/mcp" className="inline-flex h-12 items-center justify-center rounded-md border border-edge bg-surface px-6 font-medium transition-colors hover:border-faint hover:bg-sunken">
-              Setup guide
-            </Link>
-          </div>
-          <p className="mt-4 text-sm text-faint">Paste the prompt into your agent. It connects itself and checks the connection without spending anything.</p>
-        </div>
+      <SectionHeader
+        align="center"
+        eyebrow="Agents and MCP"
+        id="agents-title"
+        title="Give your AI agent SEO skills"
+        lede="Connect your agent in two minutes, then use ready-made skills or just ask. Every paid call shows its price first and stays under the limit you set."
+      />
 
-        <figure className="min-w-0 self-start lg:sticky lg:top-28">
-          <div className="overflow-hidden rounded-xl border border-code-line bg-code shadow-hard-lg">
-            <div className="flex items-center justify-between border-b border-code-line px-5 py-3 text-xs text-code-muted">
-              <span className="flex gap-1.5" aria-hidden="true">
-                <span className="size-2.5 rounded-full bg-code-line" />
-                <span className="size-2.5 rounded-full bg-code-line" />
-                <span className="size-2.5 rounded-full bg-code-line" />
-              </span>
-              <span>agent · openseo mcp</span>
-            </div>
-            <pre className="overflow-x-auto p-5 font-mono text-[0.75rem] leading-relaxed sm:p-6 sm:text-[0.8125rem]" role="img" aria-label="Example agent session: the agent prices a keyword lookup first, runs it under a 20 cent limit, and saves three keywords, spending 8 cents.">
-              {session.map((line, index) => (
-                <span key={index} className={`block ${line.kind === 'out' ? '' : 'whitespace-pre-wrap break-words'} ${tone[line.kind]}`}>
-                  {line.text || ' '}
-                </span>
-              ))}
-            </pre>
+      <figure className="mx-auto mt-14 max-w-4xl md:mt-16">
+        <div className="overflow-hidden rounded-xl border border-code-line bg-code shadow-hard-lg">
+          <div className="flex items-center justify-between border-b border-code-line px-5 py-3 text-xs text-code-muted">
+            <span className="flex gap-1.5" aria-hidden="true">
+              <span className="size-2.5 rounded-full bg-code-line" />
+              <span className="size-2.5 rounded-full bg-code-line" />
+              <span className="size-2.5 rounded-full bg-code-line" />
+            </span>
+            <span>agent · openseo mcp</span>
           </div>
-          <figcaption className="mt-4 text-center text-sm text-faint">Example session with illustrative figures.</figcaption>
-        </figure>
+          <pre className="overflow-x-auto p-5 font-mono text-[0.75rem] leading-relaxed sm:p-7 sm:text-[0.875rem]" role="img" aria-label="Example agent session: the agent prices a keyword lookup first, runs it under a 20 cent limit, and saves three keywords, spending 8 cents.">
+            {session.map((line, index) => (
+              <span key={index} className={`block ${line.kind === 'out' ? '' : 'whitespace-pre-wrap break-words'} ${tone[line.kind]}`}>
+                {line.text || ' '}
+              </span>
+            ))}
+          </pre>
+        </div>
+        <figcaption className="mt-4 text-center text-sm text-faint">Example session with illustrative figures.</figcaption>
+      </figure>
+
+      <ul className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
+        {AGENT_SKILLS.map((skill) => (
+          <li key={skill.name} className="rounded-md border border-line bg-surface px-5 py-4">
+            <p className="font-mono text-sm font-semibold text-accent-text">/{skill.name}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{skill.summary}</p>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mx-auto mt-10 max-w-2xl text-center">
+        <p className="text-[0.9375rem] text-muted">
+          Works with <span className="text-ink">{AGENT_CLIENTS.slice(0, -1).join(', ')}</span> and <span className="text-ink">{AGENT_CLIENTS.at(-1)}</span>, and
+          any client that connects to an MCP server.
+        </p>
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
+          <CopyPromptButton text={setupPrompt} />
+          <Link href="/docs/mcp" className="inline-flex h-12 items-center justify-center rounded-md border border-edge bg-surface px-6 font-medium transition-colors hover:border-faint hover:bg-sunken">
+            Setup guide
+          </Link>
+        </div>
+        <p className="mt-4 text-sm text-faint">Paste the prompt into your agent. It connects itself and checks the connection without spending anything.</p>
       </div>
     </section>
   );

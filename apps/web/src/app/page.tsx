@@ -6,8 +6,10 @@ import { CtaBand } from '@/components/cta-band';
 import { FeatureGrid } from '@/components/feature-grid';
 import { JsonLd } from '@/components/json-ld';
 import { PriceTable, rowsFromPricing } from '@/components/price-table';
-import { ProductMock } from '@/components/product-mock';
+import { Screenshot } from '@/components/screenshot';
 import { SectionHeader } from '@/components/section';
+import { TourSection } from '@/components/tour-section';
+import { tour } from '@/content/tour';
 import { AUDIT_CHECKS } from '@/content/features';
 import { priceRows } from '@/content/pricing';
 import { selfHostDocker } from '@/content/snippets';
@@ -112,8 +114,14 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="animate-rise mx-auto mt-16 max-w-4xl [animation-delay:200ms] md:mt-20">
-            <ProductMock />
+          <div className="animate-rise mx-auto mt-16 max-w-6xl [animation-delay:200ms] md:mt-20">
+            <Screenshot
+              name="keyword-overview"
+              window
+              label="app.openseo.gg/tools/keyword-overview?q=standing+desk&country=us"
+              priority
+              alt="The Keyword overview for standing desk: difficulty 38, 135K searches a month, traffic potential, volume in six countries and keyword ideas"
+            />
           </div>
         </div>
       </section>
@@ -130,41 +138,48 @@ export default function HomePage() {
         </dl>
       </section>
 
-      {/* Features */}
-      <section aria-labelledby="features-title" className="container-page py-20 md:py-28 xl:py-32">
-        <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+      {/* The research tools, one centred section each with their real screens */}
+      {tour.map((stop, index) => (
+        <TourSection key={stop.id} stop={stop} tinted={index % 2 === 1} />
+      ))}
+
+      {/* Everything else */}
+      <section aria-labelledby="features-title" className="border-y border-line bg-surface">
+        <div className="container-page py-20 md:py-28 xl:py-32">
           <SectionHeader
-           
+            align="center"
             eyebrow="Features"
             id="features-title"
-            title="Focused workflows, not a bloated suite"
-            lede="The SEO work most sites actually do, without the hundred reports you never open. Each tool has its own page with what it does and what it costs."
+            title="And the rest of the workspace"
+            lede="Rank tracking, Search Console, site audits, AI visibility, local SEO and the agent tools, each with its own page on what it does and what it costs."
           />
-          <Link href="/features" className={`${textLink} shrink-0 self-start md:self-end`}>
-            All features
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </div>
-        <div className="mt-14 md:mt-16">
-          <FeatureGrid />
+          <div className="mt-14 md:mt-16">
+            <FeatureGrid />
+          </div>
+          <p className="mt-12 text-center">
+            <Link href="/features" className={textLink}>
+              All features
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </p>
         </div>
       </section>
 
       {/* You are in control */}
-      <section aria-labelledby="control-title" className="border-y border-line bg-surface">
+      <section aria-labelledby="control-title">
         <div className="container-page py-20 md:py-28 xl:py-32">
           <SectionHeader
-           
+            align="center"
             eyebrow="You are in control"
             id="control-title"
             title="Your SEO tool should answer to you"
             lede="Closed suites decide what you see, where your data goes and what you pay. OpenSEO is built the other way round."
           />
-          <ul className="mt-14 grid grid-cols-1 gap-x-16 gap-y-12 md:mt-16 md:grid-cols-2">
+          <ul className="mx-auto mt-14 max-w-3xl space-y-12 md:mt-16">
             {control.map((item) => (
-              <li key={item.title} className="border-l-2 border-accent pl-6">
+              <li key={item.title} className="text-center">
                 <h3 className="text-heading">{item.title}</h3>
-                <p className="mt-3 text-muted">{item.body}</p>
+                <p className="mt-3 text-lg leading-relaxed text-pretty text-muted">{item.body}</p>
               </li>
             ))}
           </ul>
@@ -175,78 +190,69 @@ export default function HomePage() {
 
       {/* Self-host */}
       <section aria-labelledby="selfhost-title" className="border-y border-line bg-surface">
-        <div className="container-page grid grid-cols-1 gap-12 py-20 md:py-28 xl:py-32 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-20">
-          <div>
-            <SectionHeader
-             
-              eyebrow="Self-host"
-              id="selfhost-title"
-              title="Run the whole thing yourself"
-              lede="Everything this site runs is in the repository. Start it on your own machine or server with Docker, and it is yours."
-            />
-            <ul className="mt-10 space-y-4">
-              {selfHostPoints.map((point) => (
-                <li key={point} className="flex items-start gap-3.5 text-muted">
-                  <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
-                    <Check className="size-3.5" aria-hidden="true" strokeWidth={3} />
-                  </span>
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
-              <Link href="/docs/self-hosting" className={textLink}>
-                Self-hosting guide
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-              {GITHUB_URL ? (
-                <a href={GITHUB_URL} rel="noopener" className={textLink}>
-                  Source on GitHub
-                </a>
-              ) : null}
-            </p>
-          </div>
-
-          <div className="min-w-0">
+        <div className="container-page py-20 md:py-28 xl:py-32">
+          <SectionHeader
+            align="center"
+            eyebrow="Self-host"
+            id="selfhost-title"
+            title="Run the whole thing yourself"
+            lede="Everything this site runs is in the repository. Start it on your own machine or server with Docker, and it is yours."
+          />
+          <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-x-8 gap-y-4">
+            {selfHostPoints.map((point) => (
+              <li key={point} className="flex items-start gap-3 text-muted">
+                <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+                  <Check className="size-3.5" aria-hidden="true" strokeWidth={3} />
+                </span>
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mx-auto mt-12 max-w-3xl min-w-0">
             <CodeBlock label="Terminal" code={selfHostDocker} />
-            {GITHUB_URL ? null : (
-              <p className="mt-4 text-sm text-muted">The public repository link is not published yet. It will appear here when it is.</p>
-            )}
+            {GITHUB_URL ? null : <p className="mt-4 text-sm text-muted">The public repository link is not published yet. It will appear here when it is.</p>}
           </div>
+          <p className="mt-10 flex flex-wrap justify-center gap-x-8 gap-y-3">
+            <Link href="/docs/self-hosting" className={textLink}>
+              Self-hosting guide
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+            {GITHUB_URL ? (
+              <a href={GITHUB_URL} rel="noopener" className={textLink}>
+                Source on GitHub
+              </a>
+            ) : null}
+          </p>
         </div>
       </section>
 
       {/* Where the data comes from: the one place the provider is introduced */}
       <section aria-labelledby="data-title" className="container-page py-20 md:py-28 xl:py-32">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:items-center lg:gap-20">
-          <div>
-            <SectionHeader
-             
-              eyebrow="Search data"
-              id="data-title"
-              title="Where the data comes from"
-              lede="The crawler, the site audit and your Search Console data are free. Search data, like keyword volumes, rankings and backlinks, needs a data provider, and you pay only for the lookups you run."
-            />
-            <p className="mt-8 text-muted">
-              OpenSEO uses{' '}
-              <a href={YEPAPI_URL} rel="noopener" className={textLink}>
-                YepAPI
-              </a>{' '}
-              for search data. You add your own key when you set up your account, new accounts start with free credit,
-              and the app shows the cost of every lookup before it runs.
-            </p>
-            <p className="mt-8">
-              <Link href="/pricing" className={textLink}>
-                Costs in detail
-                <ArrowRight className="size-4" aria-hidden="true" />
-              </Link>
-            </p>
-          </div>
-          <div>
-            <PriceTable caption="Example costs per lookup" rows={rowsFromPricing(priceRows)} />
-            <p className="mt-5 text-sm text-faint">Example costs at the time of writing. A rank check stops at the page where your site appears.</p>
-          </div>
+        <SectionHeader
+          align="center"
+          eyebrow="Search data"
+          id="data-title"
+          title="Where the data comes from"
+          lede="The crawler, the site audit and your Search Console data are free. Search data, like keyword volumes, rankings and backlinks, needs a data provider, and you pay only for the lookups you run."
+        />
+        <p className="mx-auto mt-8 max-w-2xl text-center text-lg leading-relaxed text-muted">
+          OpenSEO uses{' '}
+          <a href={YEPAPI_URL} rel="noopener" className={textLink}>
+            YepAPI
+          </a>{' '}
+          for search data. You add your own key when you set up your account, new accounts start with free credit, and the
+          app shows the cost of every lookup before it runs.
+        </p>
+        <div className="mx-auto mt-12 max-w-3xl">
+          <PriceTable caption="Example costs per lookup" rows={rowsFromPricing(priceRows)} />
+          <p className="mt-5 text-center text-sm text-faint">Example costs at the time of writing. A rank check stops at the page where your site appears.</p>
         </div>
+        <p className="mt-10 text-center">
+          <Link href="/pricing" className={textLink}>
+            Costs in detail
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        </p>
       </section>
 
       <CtaBand />

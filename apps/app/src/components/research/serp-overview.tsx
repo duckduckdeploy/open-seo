@@ -145,8 +145,8 @@ function ActionLink({ href, label, icon: Icon }: { href: string; label: string; 
   );
 }
 
-const cell = "px-3 py-3 align-middle";
-const head = "px-3 py-2.5 font-mono text-[11px] font-medium uppercase tracking-wide text-muted";
+const cell = "px-2.5 py-3 align-middle";
+const head = "px-2.5 py-2.5 font-mono text-[11px] font-medium uppercase tracking-wide text-muted";
 const metric = (value: unknown) => (finite(value) ? compact(value) : "—");
 
 function SkeletonRows({ columns }: { columns: number }) {
@@ -306,10 +306,10 @@ export function SerpOverview({
                   </th>
                 </>
               )}
-              <th scope="col" className={cx(head, "w-36 text-right")} title="Estimated monthly visits from this keyword: its volume times a typical click-through rate for the organic rank">
+              <th scope="col" className={cx(head, "w-28 text-right")} title="Estimated monthly visits from this keyword: its volume times a typical click-through rate for the organic rank">
                 Est. visits
               </th>
-              <th scope="col" className={cx(head, "w-20")}>
+              <th scope="col" className={cx(head, "w-16")}>
                 <span className="sr-only">Open</span>
               </th>
             </tr>
@@ -346,7 +346,7 @@ export function SerpOverview({
                     <td className={cx(cell, "text-right font-mono text-xs text-muted tabular")} title={`Organic result ${rank}`}>
                       {result.position ?? rank}
                     </td>
-                    <td className={cx(cell, "max-w-[30rem]")}>
+                    <td className={cx(cell, "max-w-[22rem]")}>
                       <span className="flex min-w-0 items-center gap-3">
                         <SiteMark host={host || "?"} />
                         <span className="min-w-0">
@@ -383,7 +383,7 @@ export function SerpOverview({
                     )}
                     <td className={cell}>
                       <span className="flex items-center justify-end gap-2">
-                        <span className="h-1.5 w-14 overflow-hidden rounded-full bg-sunken" aria-hidden>
+                        <span className="h-1.5 w-10 overflow-hidden rounded-full bg-sunken" aria-hidden>
                           <span className="block h-full rounded-full bg-accent" style={{ width: `${((visits ?? 0) / maxVisits) * 100}%` }} />
                         </span>
                         <span className="w-12 text-right font-mono tabular">{finite(visits) ? num(visits) : "—"}</span>

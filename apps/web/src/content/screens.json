@@ -1,0 +1,90 @@
+{
+  "backlinks": {
+    "width": 1440,
+    "height": 900
+  },
+  "backlinks-history": {
+    "width": 1176,
+    "height": 613
+  },
+  "backlinks-list": {
+    "width": 1176,
+    "height": 796
+  },
+  "competitors": {
+    "width": 1440,
+    "height": 900
+  },
+  "domain-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "domain-overview-keywords": {
+    "width": 1176,
+    "height": 800
+  },
+  "domain-overview-metrics": {
+    "width": 1176,
+    "height": 131
+  },
+  "domain-overview-positions": {
+    "width": 1176,
+    "height": 347
+  },
+  "keyword-gap": {
+    "width": 1176,
+    "height": 892
+  },
+  "keyword-ideas": {
+    "width": 1440,
+    "height": 900
+  },
+  "keyword-overview": {
+    "width": 1440,
+    "height": 900
+  },
+  "keyword-overview-cards": {
+    "width": 1176,
+    "height": 346
+  },
+  "keyword-overview-ideas": {
+    "width": 1176,
+    "height": 368
+  },
+  "keyword-overview-local": {
+    "width": 1176,
+    "height": 346
+  },
+  "keyword-overview-serp": {
+    "width": 1176,
+    "height": 1068
+  },
+  "page-analyser": {
+    "width": 1440,
+    "height": 900
+  },
+  "page-analyser-keywords": {
+    "width": 1176,
+    "height": 739
+  },
+  "page-analyser-onpage": {
+    "width": 1176,
+    "height": 387
+  },
+  "search-bar": {
+    "width": 1176,
+    "height": 143
+  },
+  "search-bar-city": {
+    "width": 1176,
+    "height": 143
+  },
+  "serp-checker": {
+    "width": 1440,
+    "height": 900
+  },
+  "serp-checker-table": {
+    "width": 1176,
+    "height": 1181
+  }
+}

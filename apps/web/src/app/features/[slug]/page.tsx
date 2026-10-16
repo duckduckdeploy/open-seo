@@ -7,6 +7,8 @@ import { CtaBand } from '@/components/cta-band';
 import { PriceTable, rowsFromFeatureCosts } from '@/components/price-table';
 import { StatusNote } from '@/components/section';
 import { features, getFeature } from '@/content/features';
+import { TourShots } from '@/components/tour-section';
+import { featureTour, tourStop } from '@/content/tour';
 import { pageMeta } from '@/lib/metadata';
 import { SIGN_UP_URL } from '@/lib/site';
 
@@ -92,6 +94,25 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
             ) : null}
           </div>
         </header>
+
+        {/* See it: the real screens, one tool after another */}
+        {(featureTour[feature.slug] ?? []).map((id) => {
+          const stop = tourStop(id);
+          return (
+            <section key={id} aria-labelledby={`see-${id}`} className="container-page border-b border-line py-20 md:py-28">
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="eyebrow">See it</p>
+                <h2 id={`see-${id}`} className="text-title mt-4">
+                  {stop.eyebrow}
+                </h2>
+                <p className="mt-6 text-xl leading-relaxed text-pretty text-muted">{stop.lede}</p>
+              </div>
+              <div className="mx-auto mt-14 max-w-6xl">
+                <TourShots stop={stop} />
+              </div>
+            </section>
+          );
+        })}
 
         {/* What it does */}
         <section aria-labelledby="what-title" className="container-page grid grid-cols-1 gap-6 py-20 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-16 md:py-28">

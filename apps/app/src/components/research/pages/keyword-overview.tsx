@@ -379,8 +379,10 @@ export function KeywordOverview({ project }: { project: Project }) {
   const firstMetrics = urlMetrics.data?.urls?.find((m) => m.url === first?.url);
   // Traffic potential: what the #1 page gets from all its keywords, when known; else an estimate
   // from this keyword alone. Metrics of a URL with a query string ("/search?q=…") cover the whole
-  // path, every search on the site, so those are not used.
-  const pageTraffic = first?.url && !first.url.includes("?") ? firstMetrics?.page?.traffic : null;
+  // path, every search on the site, so those are not used; nor are figures over 20 times the
+  // keyword's volume, which cover far more than the page (a whole forum, say).
+  const rawTraffic = first?.url && !first.url.includes("?") ? firstMetrics?.page?.traffic : null;
+  const pageTraffic = finite(rawTraffic) && (!finite(volume) || rawTraffic <= volume * 20) ? rawTraffic : null;
   const potential = finite(pageTraffic) ? pageTraffic : estimatedVisits(volume, 1);
   const top = useMemo(() => {
     const urls = topOrganic(serp.data).map((r) => r.url as string);

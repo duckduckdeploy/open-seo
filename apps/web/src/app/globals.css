@@ -46,6 +46,28 @@
   --shadow-hard-lg: 0 2px 6px rgb(13 19 33 / 0.05), 0 32px 64px -24px rgb(13 19 33 / 0.22);
 
   --animate-rise: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 0.45s ease both;
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* The bar under the current slide's tab, filling until the next slide. */
+  @keyframes slide-progress {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
 
   @keyframes rise {
     from {
@@ -258,8 +280,16 @@
   }
 
   /* Long-form text: docs and legal pages */
-  .prose-doc {
+  /* Text keeps a readable measure; screenshots use the whole column so their text stays legible. */
+  .prose-doc > :not(figure) {
     max-width: 44rem;
+  }
+
+  .prose-doc > figure {
+    margin-block: 2.25rem;
+  }
+
+  .prose-doc {
     color: var(--color-ink);
     font-size: 1.0625rem;
     line-height: 1.75;
@@ -344,4 +374,10 @@
     color: var(--color-ink);
     overflow-wrap: anywhere;
   }
+}
+
+.slide-progress {
+  animation-name: slide-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
 }

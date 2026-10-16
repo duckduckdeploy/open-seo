@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
+import { Screenshot } from '@/components/screenshot';
 import { getDoc } from '@/content/docs';
 import { pageMeta } from '@/lib/metadata';
 
@@ -49,6 +50,13 @@ export default function KeywordResearchTutorial() {
           </p>
         </Step>
       </Steps>
+
+      <Screenshot
+        name="keyword-ideas"
+        window
+        alt="Keyword ideas for standing desk: tabs for each kind of idea, filters, and the list with volume, difficulty, CPC, intent and trend"
+        caption="Keyword ideas for standing desk. The same view is under SEO tools, outside any project."
+      />
 
       <h2 id="read">Read the results</h2>
       <DocTable

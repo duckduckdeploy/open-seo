@@ -39,6 +39,28 @@
 > [!NOTE]
 > OpenSEO is early and in active development. [Issues](https://github.com/duckduckdeploy/openseo/issues) and ideas are very welcome.
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="apps/web/public/screens/keyword-overview-dark.webp">
+    <img src="apps/web/public/screens/keyword-overview.webp" alt="The Keyword overview: difficulty, volume, traffic potential, volume by country and keyword ideas for one keyword" width="100%">
+  </picture>
+</p>
+
+## 📸 A look inside
+
+Every tool is one search: type a keyword, domain or URL, pick a country (and a city or state where it helps), press Enter, and everything loads together. The search is in the address, so any view can be bookmarked or shared. [The full tour with screenshots](https://openseo.gg/docs/tutorials/seo-tools).
+
+<table>
+  <tr>
+    <td width="50%"><img src="apps/web/public/screens/serp-checker-table.webp" alt="SERP checker with each result's authority, links and traffic"><br><sub><b>SERP checker</b>: the live top 10 with SERP features in place and each page's DR, links and traffic</sub></td>
+    <td width="50%"><img src="apps/web/public/screens/domain-overview.webp" alt="Domain overview of zapier.com"><br><sub><b>Domain overview</b>: traffic, keywords, links, rankings, top keywords and pages</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="apps/web/public/screens/backlinks-history.webp" alt="Backlink history charts"><br><sub><b>Backlinks</b>: totals, monthly history, strongest links, anchors and link intersect</sub></td>
+    <td width="50%"><img src="apps/web/public/screens/keyword-gap.webp" alt="Keyword gap between two domains"><br><sub><b>Competitors</b>: who you compete with, and the keyword gap with any of them</sub></td>
+  </tr>
+</table>
+
 ## ✨ Why OpenSEO
 
 - 🔓 **Open source, all of it.** The app, the API, the crawler and the agent server are MIT licensed. Change what you need and keep your changes.

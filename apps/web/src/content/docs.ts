@@ -31,6 +31,12 @@ export const docPages: DocPage[] = [
     section: 'Start here',
   },
   {
+    slug: 'tutorials/seo-tools',
+    title: 'The SEO tools, screen by screen',
+    description: 'Keyword overview, keyword ideas, SERP checker, domain overview, page analyser, backlinks and competitors, with what every part of each screen tells you.',
+    section: 'Tutorials',
+  },
+  {
     slug: 'tutorials/keyword-research',
     title: 'Build a keyword list',
     description: 'Find keywords from a seed term, filter them, save the ones worth targeting and keep their figures fresh.',
