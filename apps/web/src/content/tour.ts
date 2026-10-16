@@ -247,10 +247,128 @@ export const tour: TourStop[] = [
   },
 ];
 
-export const tourStop = (id: string) => tour.find((stop) => stop.id === id) as TourStop;
+/** What a project tracks over time, shot from a demo project for upliftdesk.com. */
+export const projectTour: TourStop[] = [
+  {
+    id: 'rank-tracking',
+    eyebrow: 'Rank tracker',
+    title: 'Your positions in the top 100, checked on schedule',
+    lede: 'Add keywords once. Every check reads the top 100 Google results for each, on the schedule you pick or when you press “Check rankings now”, and keeps the history.',
+    points: ['Top 100 for every keyword', 'Daily, weekly or monthly', 'Competitors found for you'],
+    href: '/docs/tutorials/rank-tracking',
+    slides: [
+      {
+        name: 'rank-tracker',
+        title: 'The tracker',
+        alt: 'A rank tracker for upliftdesk.com in the United States: average position, keywords in the top 3, 10 and 20, gains and losses, and the schedule',
+        body: 'Average position, how many keywords sit in the top 3, 10 and 20, and what moved since the last check. The schedule and the “Check rankings now” button sit at the top.',
+      },
+      {
+        name: 'rank-tracker-distribution',
+        title: 'Where you rank',
+        alt: 'A bar chart of keywords by position band: 1 to 3, 4 to 10, 11 to 20, 21 to 50, 51 to 100 and not found',
+        body: 'Your keywords by position band, from the top 3 down to not found in the top 100.',
+      },
+      {
+        name: 'rank-tracker-keywords',
+        title: 'Every keyword',
+        alt: 'The keyword table with position, change, best position, ranking URL, search features and history',
+        body: 'Position, change, best ever, the page that ranks and the search features on the page, for every keyword, with its history.',
+      },
+      {
+        name: 'rank-tracker-competitors',
+        title: 'Who you compete with',
+        alt: 'Competing domains ranked by how many of your keywords they share, with their top 3 count and average position',
+        body: 'The domains that rank for your keywords most often, from the same checks, at no extra cost.',
+      },
+    ],
+  },
+  {
+    id: 'site-audit',
+    eyebrow: 'Site audit',
+    title: 'Crawl your site and get a list of what to fix',
+    lede: 'Crawl up to 5,000 pages. You get a health score, the pages that could not be fetched or indexed, and every issue grouped by how much it matters.',
+    points: ['Health score', 'Issues grouped by severity', 'Every affected URL'],
+    href: '/docs/tutorials/site-audit',
+    slides: [
+      {
+        name: 'site-audit',
+        title: 'The audit',
+        alt: 'A site audit of upliftdesk.com: health score 96, pages crawled, indexable, blocked and failed pages, issue counts and average response time',
+        body: 'Health score, pages crawled and indexable, what was blocked or failed, issue counts and response time, with the sitemap and robots.txt found.',
+      },
+      {
+        name: 'site-audit-issues',
+        title: 'What to fix',
+        alt: 'Issues grouped into warnings and notices, each with the number of affected URLs',
+        body: 'Issues grouped by severity, each with how many URLs it touches. Open one for the URLs and how to fix it, or download them all as CSV.',
+      },
+    ],
+  },
+  {
+    id: 'ai-tracking',
+    eyebrow: 'AI visibility tracking',
+    title: 'How often AI assistants name and cite you, over time',
+    lede: 'Save the questions your customers ask. Each run asks every assistant all of them and measures how often your brand is named, how often your site is cited, and how you compare with competitors.',
+    points: ['Mention and citation rate', 'Share of voice', 'Runs on a schedule'],
+    href: '/docs/tutorials/ai-visibility',
+    slides: [
+      {
+        name: 'ai-tracking',
+        title: 'The overview',
+        alt: 'AI visibility for Uplift Desk: mention rate, citation rate, answers counted and the cost of the last run',
+        body: 'Mention rate, citation rate and the cost of each run, with the price of the next one shown before it starts.',
+      },
+      {
+        name: 'ai-tracking-prompts',
+        title: 'Prompt by prompt',
+        alt: 'A table of prompts against ChatGPT, Gemini, Claude and Perplexity, each cell saying whether the brand was mentioned, cited or both, and in what place',
+        body: 'For every prompt and assistant: mentioned, cited, both or absent, and where you came among the brands named.',
+      },
+      {
+        name: 'ai-tracking-share',
+        title: 'Share of voice',
+        alt: 'Share of voice: how many answers mention Uplift Desk, FlexiSpot, Vari, Autonomous and Fully',
+        body: 'How many answers mention you and each competitor, how many cite them and how often each comes first.',
+      },
+      {
+        name: 'ai-tracking-domains',
+        title: 'Sources the models trust',
+        alt: 'The domains the models cite most, with how many answers cite each',
+        body: 'The sites the assistants link to most for your questions: where a mention would do the most good.',
+      },
+      {
+        name: 'ai-tracking-models',
+        title: 'By assistant',
+        alt: 'Mention and citation rates and average position for each assistant',
+        body: 'Mention rate, citation rate and average position for each assistant, so you see where you are weakest.',
+      },
+    ],
+  },
+  {
+    id: 'local-grid',
+    eyebrow: 'Geo-grid tracking',
+    title: 'Your Google Maps rank across your area',
+    lede: 'Pick your business and a keyword. A grid of Maps searches around it shows your position at every point, saved so you can run it again and compare.',
+    points: ['3 × 3 to 9 × 9 grids', 'Your position at every point', 'Who outranks you there'],
+    href: '/docs/tutorials/local-seo',
+    slides: [
+      {
+        name: 'local-grid',
+        title: 'Geo-grid',
+        alt: 'A 7 by 7 grid of positions for “office furniture” over a map of Austin, green near the business and amber to the west, next to the top places at the selected point',
+        body: 'Green for the top 3, amber for 4 to 10, red beyond. Click a point to see the businesses that rank above you there.',
+      },
+    ],
+  },
+];
+
+export const tourStop = (id: string) => [...tour, ...projectTour].find((stop) => stop.id === id) as TourStop;
 
 /** The tool screens a feature page shows, by feature slug. */
 export const featureTour: Record<string, string[]> = {
-  'ai-visibility': ['ai-visibility'],
-  'local-seo': ['local-rank', 'local'],
+  'rank-tracking': ['rank-tracking'],
+  'site-audit': ['site-audit'],
+  'ai-visibility': ['ai-tracking', 'ai-visibility'],
+  'local-seo': ['local-grid', 'local-rank', 'local'],
 };

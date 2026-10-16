@@ -49,7 +49,8 @@ export async function api<T>(path: string, { method = "GET", body, signal, query
 // Two decimals, or three when the amount has sub-cent precision ($0.024), so small costs are not rounded away.
 export const usd = (value: number | null | undefined, digits = 2) => {
   if (value == null) return "—";
-  const subCent = Math.abs(value * 100 - Math.round(value * 100)) > 1e-6;
+  // Tenths of a cent matter for per-call prices ($0.003), not for larger sums.
+  const subCent = Math.abs(value) < 1 && Math.abs(value * 100 - Math.round(value * 100)) > 1e-6;
   return `$${value.toFixed(subCent ? Math.max(digits, 3) : digits)}`;
 };
 

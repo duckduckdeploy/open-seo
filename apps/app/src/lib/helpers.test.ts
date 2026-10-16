@@ -20,6 +20,7 @@ describe("prices shown before a run", () => {
   it("formats money without rounding small costs away", () => {
     expect(usd(0.024)).toBe("$0.024");
     expect(usd(1.5)).toBe("$1.50");
+    expect(usd(12.659)).toBe("$12.66");
     expect(usd(null)).toBe("—");
     expect(compact(1500)).toBe("1.5K");
   });

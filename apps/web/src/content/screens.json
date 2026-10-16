@@ -1,4 +1,24 @@
 {
+  "ai-tracking": {
+    "width": 1440,
+    "height": 900
+  },
+  "ai-tracking-domains": {
+    "width": 594,
+    "height": 424
+  },
+  "ai-tracking-models": {
+    "width": 594,
+    "height": 349
+  },
+  "ai-tracking-prompts": {
+    "width": 1176,
+    "height": 510
+  },
+  "ai-tracking-share": {
+    "width": 594,
+    "height": 424
+  },
   "ai-visibility": {
     "width": 1440,
     "height": 900
@@ -99,6 +119,10 @@
     "width": 1176,
     "height": 1068
   },
+  "local-grid": {
+    "width": 1142,
+    "height": 637
+  },
   "local-rank": {
     "width": 1440,
     "height": 900
@@ -123,6 +147,22 @@
     "width": 1176,
     "height": 387
   },
+  "rank-tracker": {
+    "width": 1440,
+    "height": 900
+  },
+  "rank-tracker-competitors": {
+    "width": 1176,
+    "height": 852
+  },
+  "rank-tracker-distribution": {
+    "width": 1176,
+    "height": 328
+  },
+  "rank-tracker-keywords": {
+    "width": 1176,
+    "height": 1029
+  },
   "search-bar": {
     "width": 1176,
     "height": 143
@@ -142,5 +182,13 @@
   "serp-checker-table": {
     "width": 1176,
     "height": 1181
+  },
+  "site-audit": {
+    "width": 1440,
+    "height": 900
+  },
+  "site-audit-issues": {
+    "width": 1176,
+    "height": 854
   }
 }

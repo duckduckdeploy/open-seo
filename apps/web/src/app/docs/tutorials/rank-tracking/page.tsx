@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
+import { Screenshot } from '@/components/screenshot';
 import { getDoc } from '@/content/docs';
 import { pageMeta } from '@/lib/metadata';
 
@@ -56,7 +57,7 @@ export default function RankTrackingTutorial() {
 
       <h2 id="run">Run a check</h2>
       <p>
-        On the tracker, click <Ui>Run check now</Ui> and confirm the price. Progress and spend so far are shown while it
+        On the tracker, click <Ui>Check rankings now</Ui> and confirm the price. Progress and spend so far are shown while it
         runs, and you can cancel it; finished checks stay stored. If YepAPI rejects your key or your balance or monthly
         limit runs out, the check stops and says why.
       </p>
@@ -66,6 +67,13 @@ export default function RankTrackingTutorial() {
         The <strong>Keywords</strong> tab has a summary (average position, top 3, top 10, top 20, improved and
         declined), a chart of positions, and one row per keyword. Switch device with the toggle above the tabs.
       </p>
+      <Screenshot
+        name="rank-tracker"
+        window
+        alt="A rank tracker for upliftdesk.com: average position, keywords in the top 3, 10 and 20, the position chart and the keyword table"
+        caption="A tracker of 15 keywords for upliftdesk.com in the United States, after its first check."
+      />
+      <Screenshot name="rank-tracker-keywords" alt="The keyword table with position, change, best position, ranking URL, search features and history" caption="One row per keyword: position, change, best ever, the page that ranks and the search features around it." />
       <DocTable
         caption="Rank tracking columns"
         head={['Column', 'Meaning']}

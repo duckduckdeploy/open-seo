@@ -2,6 +2,7 @@ import { ASSISTANT_BRANDS } from '@/components/brand-icon';
 import Link from 'next/link';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
+import { Screenshot } from '@/components/screenshot';
 import { getDoc } from '@/content/docs';
 import { pageMeta } from '@/lib/metadata';
 
@@ -73,6 +74,13 @@ export default function AiVisibilityTutorial() {
       </p>
 
       <h2 id="read">Read the results</h2>
+      <Screenshot
+        name="ai-tracking"
+        window
+        alt="AI visibility for Uplift Desk: mention rate, citation rate, answers counted and the cost of the last run, by model and share of voice"
+        caption="Eight prompts asked of four assistants for Uplift Desk, with four competitors tracked."
+      />
+      <Screenshot name="ai-tracking-prompts" alt="Prompts against ChatGPT, Gemini, Claude and Perplexity, each cell saying mentioned, cited, both or absent, and the place" caption="Prompts by model: whether each answer mentions you, cites you or both, and where you came." />
       <DocTable
         caption="AI visibility measures"
         head={['Measure', 'How it is counted']}

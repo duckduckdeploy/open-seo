@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
+import { Screenshot } from '@/components/screenshot';
 import { getDoc } from '@/content/docs';
 import { pageMeta } from '@/lib/metadata';
 
@@ -66,6 +67,11 @@ export default function LocalSeoTutorial() {
         Local results change from one street to the next. A geo-grid runs the same Maps search from a grid of points
         around your business and records your place in the results at each one.
       </p>
+      <Screenshot
+        name="local-grid"
+        alt="A 7 by 7 grid of positions for office furniture over a map of Austin, next to the top places at the selected point"
+        caption="A 7 × 7 grid for “office furniture” around a showroom in Austin, 2 km between points."
+      />
       <Steps>
         <Step title="Choose a keyword, a size and a spacing">
           <p>

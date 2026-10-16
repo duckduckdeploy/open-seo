@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ISSUE_CATALOG, ISSUE_TYPES } from '@openseo/crawler/catalog';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
+import { Screenshot } from '@/components/screenshot';
 import { getDoc } from '@/content/docs';
 import { pageMeta } from '@/lib/metadata';
 
@@ -50,6 +51,12 @@ export default function SiteAuditTutorial() {
         The top of the audit shows the health score, pages crawled, how many are indexable, how many were blocked or
         failed, the issue counts by severity, and whether a <code>robots.txt</code> and sitemaps were found.
       </p>
+      <Screenshot
+        name="site-audit"
+        window
+        alt="A site audit of upliftdesk.com: health score 96, pages crawled, indexable, blocked and failed pages, issue counts and response time"
+        caption="An audit of the first 100 pages of upliftdesk.com."
+      />
       <p>
         If the crawl stopped at your page limit, a note says so. Findings that compare pages with each other
         (duplicates, orphan pages, broken links) are then partial; run it again with a higher limit to cover the whole
@@ -83,6 +90,8 @@ export default function SiteAuditTutorial() {
       <p>
         The exact formula and every check are listed in <Link href="/docs/audit-checks">Site audit checks</Link>.
       </p>
+
+      <Screenshot name="site-audit-issues" alt="Issues grouped into warnings and notices, each with the number of affected URLs" caption="Issues grouped by severity. Open one for the affected URLs and how to fix it." />
 
       <h2 id="lighthouse">Test a page with Lighthouse</h2>
       <p>

@@ -159,6 +159,65 @@ const VIEWS = [
 ];
 
 // Helpers available to `crop` expressions.
+// Project features, shot from a demo project with real data: rank tracker, site audit, AI
+// visibility and a local grid (set it up once by hand, then retake). Its address is found by its
+// website, SHOT_PROJECT (default upliftdesk.com); `url` and `storage` get the IDs.
+// The project overview is left out: it shows the account's balance and spending.
+const PROJECT_VIEWS = [
+  {
+    url: (ids) => ids.tracker && `/p/${ids.project}/rank/${ids.tracker}`,
+    shots: {
+      'rank-tracker': 'viewport',
+      'rank-tracker-distribution': `box(heading("h2", "Position distribution"))`,
+      'rank-tracker-keywords': `box(document.querySelector("main table"))`,
+    },
+  },
+  {
+    url: (ids) => ids.tracker && `/p/${ids.project}/rank/${ids.tracker}?tab=competitors`,
+    cap: 820,
+    shots: { 'rank-tracker-competitors': `document.querySelector("[role=tabpanel]")` },
+  },
+  {
+    url: (ids) => ids.audit && `/p/${ids.project}/audit/${ids.audit}`,
+    shots: { 'site-audit': 'viewport', 'site-audit-issues': `document.querySelector("[role=tabpanel]")` },
+  },
+  {
+    url: (ids) => `/p/${ids.project}/ai`,
+    shots: {
+      'ai-tracking': 'viewport',
+      'ai-tracking-models': `box(heading("h2", "By model"))`,
+      'ai-tracking-share': `box(heading("h2", "Share of voice"))`,
+      'ai-tracking-domains': `box(heading("h2", "Most-cited domains"))`,
+      'ai-tracking-prompts': `box(heading("h2", "Prompts by model"))`,
+    },
+  },
+  {
+    url: (ids) => ids.business && `/p/${ids.project}/local?tab=grid`,
+    // The local page remembers the chosen business in the browser.
+    storage: (ids) => ({ [`openseo:local-business:${ids.project}`]: JSON.stringify(ids.business) }),
+    // The square map is taller than the usual window; it only renders inside the window.
+    height: 1400,
+    shots: { 'local-grid': `document.querySelector('iframe[title="Map of the area"]').closest(".grid")` },
+  },
+];
+
+/** IDs of the demo project and its latest tracker, finished audit and grid, or null without one. */
+async function projectIds(cookies) {
+  const domain = process.env.SHOT_PROJECT ?? 'upliftdesk.com';
+  const headers = { cookie: cookies.map((c) => `${c.name}=${c.value}`).join('; ') };
+  const get = (path) => fetch(`${APP}/api${path}`, { headers }).then((r) => (r.ok ? r.json() : { data: [] })).then((r) => r.data ?? []);
+  const project = (await get('/projects')).find((p) => p.domain === domain);
+  if (!project) return null;
+  const [trackers, audits, grids] = await Promise.all([get(`/projects/${project.id}/trackers`), get(`/projects/${project.id}/audits`), get(`/projects/${project.id}/geo-grids`)]);
+  const grid = grids.find((g) => g.status === 'completed');
+  return {
+    project: project.id,
+    tracker: trackers[0]?.id,
+    audit: audits.find((a) => a.status === 'completed')?.id,
+    business: grid && { id: grid.placeId, name: grid.placeName, address: null, latitude: grid.centerLat, longitude: grid.centerLng },
+  };
+}
+
 const HELPERS = `
   window.heading = (tags, start) => [...document.querySelectorAll(tags)].find((el) => el.textContent.trim().startsWith(start));
   window.text = (tags, start) => [...document.querySelectorAll(tags)].find((el) => el.textContent.trim().startsWith(start));
@@ -227,6 +286,9 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const sizes = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : {};
   const cookies = await signIn();
+  const ids = await projectIds(cookies);
+  if (!ids) console.warn(`No project for ${process.env.SHOT_PROJECT ?? 'upliftdesk.com'}: project shots skipped.`);
+  const views = [...VIEWS, ...(ids ? PROJECT_VIEWS.map((view) => ({ ...view, url: view.url(ids), storage: view.storage?.(ids) })).filter((view) => view.url) : [])];
 
   const chrome = chromePath();
   if (!chrome) throw new Error('Chrome or Edge not found. Set CHROME_PATH.');
@@ -271,15 +333,18 @@ async function main() {
       await sleep((await evaluate(`!!document.querySelector('iframe[title="Map of the area"]')`)) ? 6000 : 2000);
     };
 
-    for (const view of VIEWS) {
+    for (const view of views) {
       const names = Object.keys(view.shots).filter((name) => !only.length || only.includes(name));
       if (!names.length) continue;
+      const height = view.height ?? HEIGHT;
+      await page.send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height, deviceScaleFactor: SCALE, mobile: false });
       for (const theme of ['light', 'dark']) {
         await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
         await page.send('Page.navigate', { url: `${APP}${view.url}` });
         await sleep(1500);
         // Save the theme, then load again so the app (and its theme switcher) starts in it.
         await evaluate(`localStorage.setItem("openseo_theme", "${theme}"); true`);
+        for (const [key, value] of Object.entries(view.storage ?? {})) await evaluate(`localStorage.setItem(${JSON.stringify(key)}, ${JSON.stringify(value)}); true`);
         await page.send('Page.reload');
         await sleep(1500);
         await evaluate(`${HELPERS}
@@ -296,7 +361,7 @@ async function main() {
             await evaluate('window.scrollTo(0, 0)');
             clip = { x: 0, y: 0, width: WIDTH, height: HEIGHT, scale: 1 };
           } else {
-            const rect = await evaluate(`(() => { const el = ${crop}; if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: Math.min(r.height, 1400) }; })()`);
+            const rect = await evaluate(`(() => { const el = ${crop}; if (!el) return null; const r = el.getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, width: r.width, height: Math.min(r.height, ${view.cap ?? 1400}) }; })()`);
             if (!rect) {
               console.warn(`  ${name} (${theme}): element not found, skipped`);
               continue;
@@ -306,7 +371,7 @@ async function main() {
           }
           // Capturing beyond the viewport leaves out cross-origin frames (the Maps embed), so a crop
           // that fits on screen is scrolled into view and captured as shown.
-          const fits = clip.height <= HEIGHT;
+          const fits = clip.height <= height;
           if (fits) {
             await evaluate(`window.scrollTo(0, ${Math.max(0, clip.y - 8)}); true`);
             await sleep(crop === 'viewport' ? 300 : 1500);
