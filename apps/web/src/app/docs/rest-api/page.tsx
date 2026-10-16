@@ -225,13 +225,6 @@ export default function RestApiPage() {
         ]}
       />
 
-      <h2 id="public">Free tools (public)</h2>
-      <p>
-        <code>GET /public/tools</code> lists the tools and markets. <code>POST /public/tools/:tool</code> runs one, with
-        no account, behind the guards described in <Link href="/docs/free-tools">Run the free tools</Link>. These routes
-        are meant for the site, not for scripts: use an API key and the lookups above instead.
-      </p>
-
       <Callout title="Background runs">
         <p>
           Run routes answer <code>202</code> straight away with the queued run. Poll it until its status is{' '}

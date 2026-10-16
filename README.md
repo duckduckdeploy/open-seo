@@ -29,7 +29,7 @@
   &nbsp;·&nbsp;
   <a href="https://openseo.gg/docs/rest-api">REST API</a>
   &nbsp;·&nbsp;
-  <a href="https://openseo.gg/tools">Free tools</a>
+  <a href="https://openseo.gg/tools">SEO tools</a>
 </h3>
 
 <br>
@@ -48,7 +48,7 @@
 
 ## 📸 A look inside
 
-Every tool is one search: type a keyword, domain or URL, pick a country (and a city or state where it helps), press Enter, and everything loads together. The search is in the address, so any view can be bookmarked or shared. [The full tour with screenshots](https://openseo.gg/docs/tutorials/seo-tools).
+Every tool is one search: type a keyword, domain or URL, pick a country (and a city or state where it helps), press Enter, and everything loads together. The search is in the address, so any view can be bookmarked or shared. Each tool has [its own page](https://openseo.gg/tools), and [the guide](https://openseo.gg/docs/tutorials/seo-tools) goes through every screen.
 
 <table>
   <tr>
@@ -74,16 +74,18 @@ Every tool is one search: type a keyword, domain or URL, pick a country (and a c
 
 | Area | What you get |
 |---|---|
-| 🔑 Keyword research | Ideas and related keywords with volume, CPC, difficulty, intent and a 12-month trend; saved lists with tags |
+| 🔎 [Keyword overview](https://openseo.gg/tools/keyword-overview) | Difficulty, volume, traffic potential, volume by country, ideas and the live top 10 for one keyword, down to a city |
+| 💡 [Keyword ideas](https://openseo.gg/tools/keyword-ideas) | Matching terms, related searches, questions and suggestions with volume, CPC, difficulty, intent and trend; saved lists with tags |
+| 📋 [SERP checker](https://openseo.gg/tools/serp-checker) | The live top 10 on desktop or mobile, with each result's DR, UR, links and traffic |
 | 📍 Rank tracking | Google positions on desktop and mobile, by country, city or exact coordinates, on a schedule. Checks stop at the page where you appear. History survives removing a keyword |
 | 📊 Search performance | Search Console and GA4: totals against the previous period, striking-distance queries, organic landing pages, opportunity scores |
-| 🌐 Domain overview | Estimated traffic, ranking distribution, top keywords, top pages |
-| 🔗 Backlinks | Summary, monthly history, backlinks, referring domains, anchors, top pages, link intersect |
-| 🥊 Competitors | Organic and SERP competitors, keyword gap |
+| 🌐 [Domain overview](https://openseo.gg/tools/domain-overview) | Estimated traffic, ranking distribution, top keywords, top pages, competitors |
+| 📄 [Page analyser](https://openseo.gg/tools/page-analyser) | One page's authority, links, traffic, on-page checks, keywords and backlinks |
+| 🔗 [Backlink checker](https://openseo.gg/tools/backlink-checker) | Summary, monthly history, backlinks, referring domains, anchors, top pages, link intersect |
+| 🥊 [Competitors](https://openseo.gg/tools/competitors) | Organic and SERP competitors, keyword gap |
 | 🩺 Site audit | Our own crawler with 59 checks and a health score; Lighthouse with failed audits rated by severity |
 | 🧠 AI visibility | Tracked prompts across many chat models with web search: mentions, citations, position, share of voice. Prompts that name your brand are left out of the rates |
 | 🗺️ Local SEO | Business lookup, profile, reviews, geo-grid rank maps |
-| 🎁 [Free tools](https://openseo.gg/tools) | Six no-sign-up tools for a public site, with rate limits, Turnstile and a daily budget |
 
 ## 🐳 Self-host with Docker
 
@@ -176,7 +178,7 @@ The tests need no database, network or API keys. `apps/api/test` runs the real A
 ```
 apps/api          Fastify API, MCP server, background worker (pg-boss)
 apps/app          Dashboard (Next.js)
-apps/web          Public site, free tools and docs (Next.js)
+apps/web          Public site and docs (Next.js)
 packages/yepapi   Typed data client with price estimates
 packages/crawler  Site-audit crawler
 packages/shared   Model catalog and shared helpers

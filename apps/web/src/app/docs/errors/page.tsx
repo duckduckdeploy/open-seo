@@ -85,23 +85,6 @@ export default function ErrorsPage() {
         <code>token_exchange_failed</code> (check the OAuth client&apos;s redirect URIs).
       </p>
 
-      <h2 id="free-tools">Free tools on the site</h2>
-      <DocTable
-        caption="Free tool errors"
-        head={['Code', 'Status', 'Meaning']}
-        mono={[0, 1]}
-        rows={[
-          ['rate_limited', '429', 'More than 5 requests in a minute from one visitor. Wait a minute.'],
-          ['free_limit_reached', '429', 'This visitor used today’s free lookups. Resets at midnight UTC.'],
-          ['free_budget_reached', '503', 'The site’s daily budget for free tools is used up. Resets at midnight UTC.'],
-          ['turnstile_failed', '403', 'The anti-bot check did not pass. Reload the page.'],
-          ['free_tools_disabled', '503', 'The site has no operator key for this tool.'],
-          ['free_tools_unavailable', '503', 'In production, Turnstile or CLIENT_IP_HEADER is not configured, so the tools refuse to run.'],
-          ['tool_failed', '502', 'The lookup failed. The failure is cached for two minutes so retrying does not spend again.'],
-          ['unsupported_media_type', '415', 'The request was not JSON.'],
-        ]}
-      />
-
       <h2 id="runs">When a run stops</h2>
       <p>Rank checks, AI visibility runs, audits and geo-grids record why they stopped:</p>
       <ul>

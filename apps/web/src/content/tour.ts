@@ -19,7 +19,7 @@ export const tour: TourStop[] = [
     title: 'Everything about a keyword, from one search',
     lede: 'Type a keyword, pick a market, press Enter. Difficulty, volume, traffic potential, volume in other countries, ideas, questions and the live top 10 load together.',
     points: ['Difficulty with the links you need', 'Volume by country', 'Live top 10 with DR, links and traffic'],
-    href: '/features/keyword-research',
+    href: '/tools/keyword-overview',
     slides: [
       {
         name: 'search-bar',
@@ -75,7 +75,7 @@ export const tour: TourStop[] = [
     title: 'Hundreds of keywords around a topic',
     lede: 'Matching terms, related searches, questions and Google suggestions in one list, with volume, difficulty, intent and trend. Filter for free on what is loaded.',
     points: ['Filter by words, intent, volume and difficulty', 'Save to a project in one click', 'Export to CSV'],
-    href: '/docs/tutorials/keyword-research',
+    href: '/tools/keyword-ideas',
     slides: [
       {
         name: 'keyword-ideas',
@@ -91,7 +91,7 @@ export const tour: TourStop[] = [
     title: 'The live results page, measured',
     lede: 'The top 10 for any keyword on desktop or mobile, in any country, state or city, with every result’s authority, links and traffic.',
     points: ['Desktop or mobile', 'SERP features in place', 'Open any page or its backlinks'],
-    href: '/features/keyword-research',
+    href: '/tools/serp-checker',
     slides: [
       {
         name: 'serp-checker-table',
@@ -107,7 +107,7 @@ export const tour: TourStop[] = [
     title: 'Any website’s search traffic at a glance',
     lede: 'Traffic and what it is worth, keywords, links and authority, how rankings are spread and moving, its top keywords and pages, and who it competes with.',
     points: ['Top 100 keywords by traffic', 'Top 100 pages', 'Competitors one click away'],
-    href: '/features/domain-overview',
+    href: '/tools/domain-overview',
     slides: [
       {
         name: 'domain-overview',
@@ -135,7 +135,7 @@ export const tour: TourStop[] = [
     title: 'One page, inside and out',
     lede: 'Paste a URL: its authority, links and traffic, its title, description and headings checked, the keywords it ranks for and its strongest backlinks.',
     points: ['On-page checks', 'Keywords the page ranks for', 'Strongest backlinks'],
-    href: '/features/domain-overview',
+    href: '/tools/page-analyser',
     slides: [
       {
         name: 'page-analyser',
@@ -163,7 +163,7 @@ export const tour: TourStop[] = [
     title: 'Who links to a site, and how that is changing',
     lede: 'For a domain or one page: totals, the monthly history of links gained and lost, the strongest backlinks, referring domains, anchors and the most linked pages.',
     points: ['Monthly history', 'Strongest links first', 'Link intersect with competitors'],
-    href: '/features/backlinks',
+    href: '/tools/backlink-checker',
     slides: [
       {
         name: 'backlinks',
@@ -191,7 +191,7 @@ export const tour: TourStop[] = [
     title: 'Find who you compete with, then what they have that you do not',
     lede: 'Your organic competitors, then the keyword gap with any of them: the keywords only they rank for, and the ones you share, side by side.',
     points: ['Organic and SERP competitors', 'Keyword gap in one click', 'Save the opportunities'],
-    href: '/features/competitor-research',
+    href: '/tools/competitors',
     slides: [
       {
         name: 'competitors',
@@ -211,11 +211,7 @@ export const tour: TourStop[] = [
 
 export const tourStop = (id: string) => tour.find((stop) => stop.id === id) as TourStop;
 
-/** The tools each feature page shows, by feature slug. */
+/** The tool screens a feature page shows, by feature slug. */
 export const featureTour: Record<string, string[]> = {
-  'keyword-research': ['keyword-overview', 'keyword-ideas', 'serp-checker'],
   'local-seo': ['local'],
-  'domain-overview': ['domain-overview', 'page-analyser'],
-  backlinks: ['backlinks'],
-  'competitor-research': ['competitors'],
 };

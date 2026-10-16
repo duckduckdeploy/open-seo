@@ -9,7 +9,18 @@ const sizeOf = (name: ScreenName) => screens[name];
  * match the reader's system. `window` frames a whole screen like an app window; crops of one
  * part of a page sit in a plain frame.
  */
-export function ScreenImage({ name, alt, priority = false, className = '' }: { name: ScreenName; alt: string; priority?: boolean; className?: string }) {
+export function ScreenImage({
+  name,
+  alt,
+  priority = false,
+  thumbnail = false,
+}: {
+  name: ScreenName;
+  alt: string;
+  priority?: boolean;
+  /** Shrinks to fit at any width, for small previews. */
+  thumbnail?: boolean;
+}) {
   const { width, height } = sizeOf(name);
   // On a phone a desktop screen would shrink past reading: it keeps a readable width and scrolls.
   return (
@@ -24,7 +35,7 @@ export function ScreenImage({ name, alt, priority = false, className = '' }: { n
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : undefined}
           decoding="async"
-          className={`block h-auto w-full max-sm:min-w-[40rem] ${className}`}
+          className={`block h-auto w-full ${thumbnail ? '' : 'max-sm:min-w-[40rem]'}`}
         />
       </picture>
     </div>

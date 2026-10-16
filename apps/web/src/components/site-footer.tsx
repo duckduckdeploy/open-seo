@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { comparisons } from '@/content/compare';
 import { docPages, docsIn } from '@/content/docs';
 import { features } from '@/content/features';
+import { tools } from '@/content/tools';
 import { GITHUB_URL, SIGN_IN_URL, SIGN_UP_URL } from '@/lib/site';
 import { Logo } from './logo';
 
@@ -26,8 +27,18 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <nav aria-label="Features">
-          <FooterHeading>Features</FooterHeading>
+        <nav aria-label="SEO tools and features">
+          <FooterHeading>SEO tools</FooterHeading>
+          <ul className="space-y-3">
+            {tools.map((tool) => (
+              <li key={tool.slug}>
+                <Link href={`/tools/${tool.slug}`} className={linkClass}>
+                  {tool.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <h2 className="mt-9 mb-5 text-sm font-semibold text-ink">Features</h2>
           <ul className="space-y-3">
             {features.map((feature) => (
               <li key={feature.slug}>
@@ -63,11 +74,6 @@ export function SiteFooter() {
             <li>
               <Link href="/pricing" className={linkClass}>
                 Pricing
-              </Link>
-            </li>
-            <li>
-              <Link href="/tools" className={linkClass}>
-                Free tools
               </Link>
             </li>
             {comparisons.map((c) => (

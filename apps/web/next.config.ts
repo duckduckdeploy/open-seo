@@ -1,16 +1,20 @@
 import type { NextConfig } from 'next';
 
-const apiUrl = (process.env.API_URL ?? 'http://localhost:4100').replace(/\/+$/, '');
+// Feature pages that became tool pages, and where they went.
+const MOVED_FEATURES: Record<string, string> = {
+  'keyword-research': '/tools/keyword-overview',
+  'domain-overview': '/tools/domain-overview',
+  backlinks: '/tools/backlink-checker',
+  'competitor-research': '/tools/competitors',
+};
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // The docs read the audit check list straight from the crawler package (@openseo/crawler/catalog).
   transpilePackages: ['@openseo/crawler', '@openseo/shared'],
-  // The free tools post to the API's public endpoints through this site, so the browser only
-  // talks to one origin. Only /api/public is forwarded; the dashboard API is not reachable here.
-  async rewrites() {
-    return [{ source: '/api/public/:path*', destination: `${apiUrl}/api/public/:path*` }];
+  async redirects() {
+    return Object.entries(MOVED_FEATURES).map(([slug, destination]) => ({ source: `/features/${slug}`, destination, permanent: true }));
   },
 };
 

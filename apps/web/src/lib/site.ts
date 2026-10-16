@@ -23,12 +23,9 @@ export const SITE_TAGLINE = 'The open-source SEO suite you control.';
 export const SITE_DESCRIPTION =
   'OpenSEO is an open-source SEO suite for you and your AI agent: keyword research, rank tracking, backlinks, site audits, AI visibility and your own Search Console data. Self-host it with Docker or use it online, and see the cost of every action before it runs.';
 
-/** Cloudflare Turnstile site key for the free tools. Without it the widget is not shown. */
-export const TURNSTILE_SITE_KEY: string | null = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || null;
-
 export const NAV_LINKS = [
+  { href: '/tools', label: 'SEO tools' },
   { href: '/features', label: 'Features' },
-  { href: '/tools', label: 'Free tools' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/docs', label: 'Docs' },
 ] as const;

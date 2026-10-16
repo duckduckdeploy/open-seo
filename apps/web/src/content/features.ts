@@ -3,11 +3,7 @@ import {
   Bot,
   ChartLine,
   ClipboardCheck,
-  Globe,
-  Link2,
   MapPin,
-  Search,
-  Swords,
   Terminal,
   type LucideIcon,
 } from 'lucide-react';
@@ -57,42 +53,6 @@ export interface Feature {
 export const UNLISTED_PRICE_LABEL = 'Shown in the app before it runs';
 
 export const features: Feature[] = [
-  {
-    slug: 'keyword-research',
-    name: 'Keyword research',
-    headline: 'Keyword research with the numbers that matter',
-    summary:
-      'Keyword ideas and related keywords with volume, CPC, difficulty, intent and a 12-month trend, across 215 markets.',
-    icon: Search,
-    what: [
-      'Start from a seed term and get keyword ideas and related keywords. Each one comes with search volume, CPC, difficulty, search intent and a 12-month trend, so you can judge a keyword without opening another tool.',
-      'Keep the ones worth pursuing in saved lists, and tag them so they stay organised as the lists grow.',
-    ],
-    capabilities: [
-      {
-        title: 'Ideas and related keywords',
-        body: 'Expand a seed term into keyword ideas and the related keywords around it.',
-      },
-      {
-        title: 'Five metrics per keyword',
-        body: 'Search volume, CPC, keyword difficulty, search intent and a 12-month trend for every result.',
-      },
-      {
-        title: '215 markets',
-        body: '94 markets return the full set of metrics. The other 121 return search volume only.',
-      },
-      {
-        title: 'Saved lists with tags',
-        body: 'Save keywords to lists and tag them by topic, page, priority or anything else you track.',
-      },
-    ],
-    facts: [
-      { value: '215', label: 'markets' },
-      { value: '94', label: 'with full data' },
-      { value: '121', label: 'volume only' },
-    ],
-    costs: [{ action: 'Keyword research', unit: '150 results', price: 'about $0.08' }],
-  },
   {
     slug: 'rank-tracking',
     name: 'Rank tracking',
@@ -185,110 +145,6 @@ export const features: Feature[] = [
     ],
     costs: [{ action: 'Search Console and Analytics reports', unit: 'Any view, any period', price: 'Free' }],
     costNote: 'Google’s data is free, and nothing here is billed.',
-  },
-  {
-    slug: 'domain-overview',
-    name: 'Domain overview',
-    headline: 'A quick read on any domain',
-    summary: 'Estimated organic traffic, top keywords, top pages and ranking distribution for a domain.',
-    icon: Globe,
-    what: [
-      'Enter a domain and see how it performs in organic search: estimated organic traffic, the keywords and pages that bring it in, and how its rankings are distributed.',
-      'Use it on your own site to see where you stand, or on someone else\'s before you look closer.',
-    ],
-    capabilities: [
-      {
-        title: 'Estimated organic traffic',
-        body: 'An estimate of the organic traffic a domain receives.',
-      },
-      {
-        title: 'Top keywords',
-        body: 'The keywords the domain ranks for that matter most.',
-      },
-      {
-        title: 'Top pages',
-        body: 'The pages that account for the most organic visibility.',
-      },
-      {
-        title: 'Ranking distribution',
-        body: 'How the domain\'s rankings are spread across positions.',
-      },
-    ],
-    costs: [
-      { action: 'Domain overview', unit: 'Traffic and totals, ranking distribution and authority', price: '$0.14' },
-      { action: 'Domain overview, totals only', unit: 'Traffic, keywords and backlink totals (API)', price: '$0.08' },
-    ],
-  },
-  {
-    slug: 'backlinks',
-    name: 'Backlinks',
-    headline: 'Backlink data, a few cents at a time',
-    summary:
-      'Backlink summary, backlink list, referring domains, anchors, monthly new and lost links, top linked pages and link intersect.',
-    icon: Link2,
-    what: [
-      'Look at who links to a site and how. Start with the summary, then go into the backlink list, referring domains and anchor text.',
-      'Monthly history shows new and lost links over time. Top linked pages shows what attracts links, and link intersect compares link profiles.',
-    ],
-    capabilities: [
-      {
-        title: 'Summary',
-        body: 'A summary of a site\'s backlink profile.',
-      },
-      {
-        title: 'Backlink list',
-        body: 'The individual links pointing at a site.',
-      },
-      {
-        title: 'Referring domains',
-        body: 'The domains those links come from.',
-      },
-      {
-        title: 'Anchors',
-        body: 'The anchor text used to link to the site.',
-      },
-      {
-        title: 'Monthly history',
-        body: 'Link history by month, with new and lost links.',
-      },
-      {
-        title: 'Top linked pages',
-        body: 'The pages on a site that receive the most links.',
-      },
-      {
-        title: 'Link intersect',
-        body: 'Compare link profiles to find the overlap and the gaps.',
-      },
-    ],
-    costs: [
-      { action: 'Backlinks', unit: '100 rows', price: '$0.06' },
-      { action: 'Other backlink reports', unit: 'Per report', price: null },
-    ],
-  },
-  {
-    slug: 'competitor-research',
-    name: 'Competitor research',
-    headline: 'See who you compete with, and where they are ahead',
-    summary: 'Find your SERP competitors and the keyword gap between their site and yours.',
-    icon: Swords,
-    what: [
-      'Your search competitors are the sites that show up in the same results as you, which is not always the list you would write down from memory. OpenSEO finds them from the SERPs.',
-      'Keyword gap then shows the difference between the keywords they rank for and the keywords you rank for.',
-    ],
-    capabilities: [
-      {
-        title: 'SERP competitors',
-        body: 'Find the sites that compete with you in search results.',
-      },
-      {
-        title: 'Keyword gap',
-        body: 'Compare keyword rankings between your site and a competitor to see what you are missing.',
-      },
-    ],
-    costs: [
-      { action: 'SERP competitors', unit: 'Per lookup', price: null },
-      { action: 'Keyword gap', unit: 'Per comparison', price: null },
-    ],
   },
   {
     slug: 'site-audit',

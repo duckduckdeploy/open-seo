@@ -103,6 +103,44 @@ const VIEWS = [
     url: '/tools/competitors?domain=todoist.com&vs=ticktick.com&country=us&lang=en',
     shots: { 'keyword-gap': `document.querySelector("[role=tablist]").parentElement` },
   },
+  // More parts, for the tools' own landing pages.
+  {
+    url: '/tools/keyword-ideas?q=standing+desk&country=us&lang=en&view=questions',
+    shots: { 'keyword-ideas-questions': `document.querySelector('nav[aria-label="Idea lists"]').parentElement` },
+  },
+  {
+    url: '/tools/serp-checker?q=standing+desk&country=us&lang=en&device=mobile',
+    before: 'authority',
+    shots: { 'serp-checker-mobile': `heading("h2", "standing desk").closest("section")` },
+  },
+  {
+    url: '/tools/domain-overview?domain=zapier.com&country=us&lang=en&tab=pages',
+    shots: { 'domain-overview-pages': `document.querySelector("[role=tablist]").parentElement` },
+  },
+  {
+    url: '/tools/domain-overview?domain=zapier.com&country=us&lang=en&tab=competitors',
+    shots: { 'domain-overview-competitors': `document.querySelector("[role=tablist]").parentElement` },
+  },
+  {
+    url: '/tools/page-analyser?url=https%3A%2F%2Fzapier.com%2Fblog%2Fbest-note-taking-apps%2F&country=us&lang=en',
+    shots: { 'page-analyser-links': `box(heading("h2", "Strongest backlinks"))` },
+  },
+  {
+    url: '/tools/backlink-checker?target=zapier.com&tab=domains',
+    shots: { 'backlinks-domains': `document.querySelector("[role=tablist]").parentElement` },
+  },
+  {
+    url: '/tools/backlink-checker?target=zapier.com&tab=anchors',
+    shots: { 'backlinks-anchors': `document.querySelector("[role=tablist]").parentElement` },
+  },
+  {
+    url: '/tools/backlink-checker?target=zapier.com&tab=intersect&vs=make.com,ifttt.com',
+    shots: { 'backlinks-intersect': `document.querySelector("[role=tablist]").parentElement` },
+  },
+  {
+    url: '/tools/competitors?tab=serp&keywords=standing+desk%0Aadjustable+desk%0Aergonomic+chair%0Adesk+converter%0Amonitor+arm&country=us&lang=en',
+    shots: { 'competitors-serp': `document.querySelector("[role=tablist]").parentElement` },
+  },
 ];
 
 // Helpers available to `crop` expressions.

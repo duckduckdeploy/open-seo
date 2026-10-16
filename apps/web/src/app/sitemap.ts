@@ -9,13 +9,13 @@ import { SITE_URL } from '@/lib/site';
 export default function sitemap(): MetadataRoute.Sitemap {
   const paths: { path: string; priority: number }[] = [
     { path: '/', priority: 1 },
+    { path: '/tools', priority: 0.9 },
+    ...tools.map((tool) => ({ path: `/tools/${tool.slug}`, priority: 0.9 })),
     { path: '/features', priority: 0.9 },
     { path: '/pricing', priority: 0.9 },
     { path: '/docs', priority: 0.7 },
     ...features.map((feature) => ({ path: `/features/${feature.slug}`, priority: 0.8 })),
     ...docPages.map((doc) => ({ path: `/docs/${doc.slug}`, priority: 0.6 })),
-    { path: '/tools', priority: 0.8 },
-    ...tools.map((tool) => ({ path: `/tools/${tool.slug}`, priority: 0.7 })),
     ...comparisons.map((c) => ({ path: `/compare/${c.slug}`, priority: 0.6 })),
   ];
 

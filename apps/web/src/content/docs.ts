@@ -97,12 +97,6 @@ export const docPages: DocPage[] = [
     section: 'Run it yourself',
   },
   {
-    slug: 'free-tools',
-    title: 'Run the free tools',
-    description: 'Turn on the public free tools, pay for them from an operator key, and keep abuse and spending in check.',
-    section: 'Run it yourself',
-  },
-  {
     slug: 'mcp',
     title: 'Connect your agent',
     description: 'Sign in from ChatGPT and Claude, a setup prompt for other agents, SEO skills and the Claude Code plugin, and setup for Cursor, VS Code, Codex, Gemini, OpenCode and Windsurf.',

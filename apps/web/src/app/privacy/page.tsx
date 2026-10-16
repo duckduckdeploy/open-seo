@@ -26,10 +26,6 @@ export default function PrivacyPage() {
           If you connect Google Search Console or Google Analytics: which Google account and property, its email
           address, and read-only access tokens, stored encrypted. The data Google returns is not stored.
         </li>
-        <li>
-          If you use the free tools on this site: a one-way hash of your IP address for rate limiting, kept for at most
-          three days, and the tool&apos;s result, shared with anyone who asks the same thing within 24 hours.
-        </li>
       </ul>
 
       <h2>YepAPI</h2>

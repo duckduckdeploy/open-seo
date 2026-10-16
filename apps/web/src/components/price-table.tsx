@@ -17,7 +17,7 @@ interface PriceTableProps {
 }
 
 export function rowsFromPricing(rows: PriceRow[]): Row[] {
-  return rows.map((row) => ({ ...row, href: `/features/${row.feature}` }));
+  return rows.map((row) => ({ ...row }));
 }
 
 export function rowsFromFeatureCosts(costs: FeatureCost[]): Row[] {

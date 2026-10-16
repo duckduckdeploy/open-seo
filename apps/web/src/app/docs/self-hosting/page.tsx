@@ -184,15 +184,13 @@ export default function SelfHostingPage() {
         mono={[0]}
         rows={[
           ['GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET', 'Lets users connect Search Console and Analytics. See Set up Google sign-in.'],
-          ['FREE_TOOLS_YEPAPI_KEY, TURNSTILE_SECRET_KEY', 'Turns on the public free tools. See Run the free tools.'],
-          ['CLIENT_IP_HEADER', "A header your proxy sets to the visitor's address, for rate limits."],
           ['API_BIND, APP_BIND, WEB_BIND', 'Which address each service listens on. 127.0.0.1 by default, so only this machine can reach them.'],
           ['POSTGRES_PASSWORD', 'The database password. Set a long random one on a server.'],
         ]}
       />
       <p>
         After changing <code>.env</code>, run <code>docker compose up -d</code> again. See{' '}
-        <Link href="/docs/google-setup">Set up Google sign-in</Link> and <Link href="/docs/free-tools">Run the free tools</Link>.
+        <Link href="/docs/google-setup">Set up Google sign-in</Link>.
       </p>
 
       <h2 id="source">From source, for development</h2>

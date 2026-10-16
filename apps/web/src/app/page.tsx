@@ -108,9 +108,9 @@ export default function HomePage() {
             <p className="animate-rise mt-6 text-[0.9375rem] text-muted [animation-delay:240ms]">
               Or{' '}
               <Link href="/tools" className="font-medium text-accent-text underline-offset-4 hover:underline">
-                try the free tools
+                see every SEO tool
               </Link>
-              , no sign-up needed.
+              , with real screenshots.
             </p>
           </div>
 
