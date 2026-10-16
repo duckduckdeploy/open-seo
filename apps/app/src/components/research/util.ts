@@ -1,23 +1,11 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback } from "react";
 import type { KeywordToSave, N, S, TrendPoint } from "./types";
 
 type ParamValue = string | number | boolean | null | undefined;
 
-let ownQuery: string | null = null;
-
-/**
- * True when the URL's query was last written by useSetUrl, not by a link. The standalone tools
- * use it to start a page afresh when a link opens it again with another keyword or domain.
- */
-export const isOwnQuery = (query: string) => query === ownQuery;
-
-/**
- * Writes form state to the URL without a navigation, so a view can be shared or reloaded.
- * Reading happens once (useSearchParams) to prefill forms; a reload never runs a paid lookup.
- */
+/** Writes form state to the URL without a navigation, so a view can be shared or reloaded. */
 export function useSetUrl() {
   return useCallback((patch: Record<string, ParamValue>) => {
     const params = new URLSearchParams(window.location.search);
@@ -26,7 +14,6 @@ export function useSetUrl() {
       else params.set(key, value === true ? "1" : String(value));
     }
     const query = params.toString();
-    ownQuery = query;
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }, []);
 }
@@ -98,6 +85,10 @@ export function toSave(row: {
   };
 }
 
+/** Monthly points oldest first, whatever order they came in (YepAPI sends newest first). */
+export const chronological = <T extends { month: string; volume?: number | null }>(points: (T | null | undefined)[] | null | undefined): T[] =>
+  (points ?? []).filter((point): point is T => Boolean(point?.month) && finite(point?.volume)).sort((a, b) => a.month.localeCompare(b.month));
+
 export const csvDate = () => new Date().toISOString().slice(0, 10);
 export const slug = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "export";
 
@@ -118,20 +109,3 @@ export const estimatedVisits = (volume: N, position: N) =>
 
 const QUESTION = /^(how|what|why|when|where|which|who|whose|can|could|does|do|did|is|are|was|should|will|would)\b/i;
 export const isQuestion = (keyword: string) => QUESTION.test(keyword.trim()) || keyword.trim().endsWith("?");
-
-/**
- * Runs a tool once when it was opened from a link marked go=1 (a keyword or page the user clicked),
- * then drops the mark, so a reload or a shared link does not run it again.
- */
-export function useRunFromLink(run: () => void) {
-  const params = useSearchParams();
-  const setUrl = useSetUrl();
-  const done = useRef(false);
-  useEffect(() => {
-    if (done.current || params.get("go") !== "1") return;
-    done.current = true;
-    setUrl({ go: null });
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
-  }, []);
-}

@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, Responsiv
 import { DistributionChart } from "@/components/tracking/charts";
 import { compact, num } from "@/lib/api";
 import type { BacklinksHistoryPoint, N } from "./types";
-import { finite, monthLabel } from "./util";
+import { chronological, finite, monthLabel } from "./util";
 
 // Colours come from the theme tokens, so every chart follows light and dark mode.
 const INK = "var(--color-ink)";
@@ -152,9 +152,9 @@ export function NewLostBars({ history, newKey, lostKey, title }: { history: Back
   );
 }
 
-/** Monthly search volume of one keyword over the last 12 months. */
+/** Monthly search volume of one keyword, every month YepAPI has. */
 export function VolumeTrend({ trend }: { trend: { month: string; volume: number }[] }) {
-  const data = trend.filter((point) => point && finite(point.volume)).map((point) => ({ month: monthLabel(point.month), value: point.volume }));
+  const data = chronological(trend).map((point) => ({ month: monthLabel(point.month), value: point.volume }));
   const peak = data.reduce<{ month: string; value: number } | null>((best, point) => (!best || point.value > best.value ? point : best), null);
   return (
     <ChartFrame

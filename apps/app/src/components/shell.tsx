@@ -30,6 +30,7 @@ import { signOut } from "@/lib/auth";
 import { useMe, useProject } from "@/lib/hooks";
 import { BalanceAlert, BalanceChip, BalancePanel } from "./balance";
 import { TOOLS } from "./research/tool-catalog";
+import { ThemeSwitcher } from "./theme";
 import { cx, Spinner } from "./ui";
 
 const projectNav = [
@@ -173,6 +174,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <button type="button" onClick={onSignOut} className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-muted hover:bg-sunken hover:text-ink">
             <LogOut className="size-4" aria-hidden /> Sign out
           </button>
+          <div className="px-2.5 pt-2">
+            <ThemeSwitcher />
+          </div>
           <p className="truncate px-2.5 pt-1 font-mono text-[11px] text-faint">{me.data.user.email}</p>
         </div>
       </aside>
@@ -188,7 +192,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         )}
         {!needsKey && <BalanceAlert />}
-        <div className="mx-auto max-w-6xl px-4 py-6 lg:px-8 lg:py-8">{children}</div>
+        {/* Research views use the full width, so wide tables and four-card rows fit without scrolling. */}
+        <div className={cx("mx-auto px-4 py-6 lg:px-8 lg:py-8", pathname.startsWith("/tools/") || pathname.startsWith("/p/") ? "max-w-none" : "max-w-6xl")}>{children}</div>
       </main>
     </div>
   );

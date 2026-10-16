@@ -2,14 +2,13 @@
 
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import type { Project } from "@/lib/hooks";
-import { toolLinks } from "@/lib/scope";
+import { type Market, toolLinks } from "@/lib/scope";
 
-/** A keyword that opens its Keyword overview, in the market of the page it is on. */
-export function KeywordLink({ keyword, project }: { keyword: string; project: Project }) {
+/** A keyword that opens its Keyword overview, in the market of the page it is on (a project is one). */
+export function KeywordLink({ keyword, market }: { keyword: string; market: Market }) {
   return (
     <Link
-      href={toolLinks.keyword(keyword, project)}
+      href={toolLinks.keyword(keyword, market)}
       title={`Keyword overview for "${keyword}"`}
       className="block max-w-72 truncate font-medium underline decoration-line decoration-2 underline-offset-4 hover:decoration-accent"
     >

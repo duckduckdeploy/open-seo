@@ -21,8 +21,8 @@ export default function CompetitorTutorial() {
       <Steps>
         <Step title="Organic competitors">
           <p>
-            Open <Ui>Competitors</Ui>. On <strong>Organic competitors</strong>, your domain is filled in; click{' '}
-            <Ui>Find competitors</Ui>. You get the domains that rank for the same keywords as you, with how many
+            Open <Ui>Competitors</Ui>, enter your domain (in a project it is filled in) and press Enter. On{' '}
+            <strong>Organic competitors</strong> you get the domains that rank for the same keywords as you, with how many
             keywords you share and their estimated traffic. The top 50 costs about $0.05.
           </p>
         </Step>
@@ -37,7 +37,8 @@ export default function CompetitorTutorial() {
 
       <h2 id="size">2. Size them up</h2>
       <p>
-        Open <Ui>Domain overview</Ui>, enter a competitor and click <Ui>Run overview</Ui> ($0.14). You get:
+        Open <Ui>Domain overview</Ui>, enter a competitor and press Enter. One search loads everything below; the
+        price shows before it runs. You get:
       </p>
       <DocTable
         caption="Domain overview figures"
@@ -51,9 +52,10 @@ export default function CompetitorTutorial() {
         ]}
       />
       <p>
-        Below it, <strong>Top keywords</strong> and <strong>Top pages</strong> list what brings the traffic in. Filter
-        top keywords by position or by a URL path such as <code>/blog/</code> to study one section of a site. These
-        lists are paged and each page is a separate lookup; the price per page is shown next to the pager.
+        Below it, <strong>Top keywords</strong> and <strong>Top pages</strong> list the 100 keywords and pages that
+        bring in the most traffic, and <strong>Competitors</strong> lists who they compete with. Filter the keywords by
+        text or position for free. Click any page to open it in the <strong>Page analyser</strong>, with the keywords
+        that page ranks for and its strongest backlinks.
       </p>
 
       <h2 id="gap">3. Find the keyword gap</h2>
@@ -66,9 +68,9 @@ export default function CompetitorTutorial() {
         </Step>
         <Step title="Gap or shared">
           <p>
-            <strong>Gap</strong> lists keywords they rank for and you do not: new ground to cover.{' '}
-            <strong>Shared</strong> lists keywords you both rank for, with each side&apos;s position and how many places
-            you trail by. Use Min volume and Max difficulty to keep it to realistic targets.
+            Both lists load together: <strong>Only they rank</strong> lists keywords they rank for and you do not, new
+            ground to cover; <strong>Both rank</strong> lists keywords you share. Sort by volume or difficulty to find
+            realistic targets.
           </p>
         </Step>
         <Step title="Save the opportunities">
@@ -81,14 +83,14 @@ export default function CompetitorTutorial() {
 
       <h2 id="links">4. See where their links come from</h2>
       <p>
-        Open <Ui>Backlinks</Ui>, enter the competitor (a domain, a subdomain, or one exact page as a full URL) and click{' '}
-        <Ui>Run summary + history</Ui> for the totals and a monthly chart of links gained and lost ($0.10). Then use the
-        tabs:
+        Open <Ui>Backlinks</Ui>, enter the competitor (a domain, a subdomain, or one exact page as a full URL) and
+        press Enter. One search loads the totals, a monthly chart of links gained and lost, and every list below; the
+        tabs only switch between them:
       </p>
       <ul>
         <li>
-          <strong>Backlinks</strong>: individual links, by default the strongest one from each linking domain. Filter
-          live or lost links and dofollow only.
+          <strong>Backlinks</strong>: the 100 strongest live links, one from each linking domain. Tick dofollow only
+          to hide nofollow links.
         </li>
         <li>
           <strong>Referring domains</strong> and <strong>Anchors</strong>: who links, and with which words.

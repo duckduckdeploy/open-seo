@@ -1,328 +1,264 @@
 "use client";
 
-import { Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { LocationPicker, type LocationChoice } from "@/components/location-picker";
 import { type Column, DataTable } from "@/components/research/data-table";
-import { ExportButton, Price, ResultMeta, RunPrompt, SaveSelected, useStickyLookup } from "@/components/research/lookup-ui";
+import { ExportButton, Price, RunPrompt, SaveSelected, ViewErrors, ViewMeta } from "@/components/research/lookup-ui";
 import { Competition, DifficultyPill, INTENTS, IntentBadge } from "@/components/research/pills";
-import { Check } from "@/components/tracking/kit";
-import { SerpPanel } from "@/components/research/serp-panel";
+import { SearchBar, useChangeMarket, useMarket, useToolNav } from "@/components/research/search-bar";
+import { Skeleton, suggestionsOf } from "@/components/research/serp-overview";
 import { Sparkline } from "@/components/research/sparkline";
-import type { KeywordIdeasData, KeywordIdeasInput, KeywordMetrics } from "@/components/research/types";
-import { csvDate, money, oneOf, optInt, slug, toSave, useSetUrl } from "@/components/research/util";
-import { Button, Card, ErrorNote, Field, Input, PageHeader, Select, Spinner } from "@/components/ui";
+import { KeywordLink } from "@/components/research/tool-link";
+import type { KeywordIdeasData, KeywordIdeasInput, KeywordMetrics, SerpData } from "@/components/research/types";
+import { csvDate, isQuestion, money, oneOf, optInt, slug, toSave } from "@/components/research/util";
+import { Card, cx, Input, PageHeader, Select } from "@/components/ui";
 import { num } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
-import { useEstimate } from "@/lib/lookup";
-import { isToolsScope, toolLinks } from "@/lib/scope";
-import { keywordToolLabel, OpenInTool } from "@/components/research/tool-link";
+import { type LookupQuery, useLookupQuery, useViewPrice } from "@/lib/lookup";
+import { lookupMarket, type Market, marketName } from "@/lib/scope";
 
-const LIMITS = ["50", "150", "300", "500"] as const;
-const SOURCES = ["ideas", "related"] as const;
+const LIMIT = 300;
+/** City and state volume costs a flat fee for up to 100 keywords: asked for the top 100. */
+const LOCAL = 100;
+const VIEWS = [
+  ["all", "All ideas"],
+  ["terms", "Matching terms"],
+  ["related", "Related terms"],
+  ["questions", "Questions"],
+  ["suggestions", "Search suggestions"],
+] as const;
+type View = (typeof VIEWS)[number][0];
 
+type Row = KeywordMetrics & { sources: Set<"terms" | "related" | "suggestions"> };
+type LocalInput = { keywords: string[]; cityLocationCode: number; language: string };
+
+function inputsFor(keyword: string, market: Market) {
+  if (!keyword) return null;
+  return {
+    terms: { keyword, source: "ideas", limit: LIMIT, ...lookupMarket(market) } satisfies KeywordIdeasInput,
+    related: { keyword, source: "related", limit: LIMIT, ...lookupMarket(market) } satisfies KeywordIdeasInput,
+    suggest: { query: keyword, ...lookupMarket(market, { area: true }) },
+  };
+}
+
+/**
+ * Keyword ideas from one seed (?q=&country=&lang=, &loc= for a city or state): matching terms,
+ * related terms, questions among them and Google's suggestions, all loaded together and merged
+ * into one list. The view and filters live in the URL too and filter what is loaded, for free.
+ * With a city or state, the top 100 also get their local volume.
+ */
 export function KeywordResearch({ project }: { project: Project }) {
   const params = useSearchParams();
-  const setUrl = useSetUrl();
+  const nav = useToolNav();
+  const changeMarket = useChangeMarket();
+  const market = useMarket(project);
+  const keyword = params.get("q")?.trim() ?? "";
+  const view = oneOf(params.get("view"), VIEWS.map(([key]) => key), "all") as View;
+  const filters = {
+    text: params.get("include") ?? "",
+    intent: params.get("intent") ?? "",
+    minVolume: optInt(params.get("minVolume"), 0),
+    maxDifficulty: optInt(params.get("maxKd"), 0, 100),
+    minWords: optInt(params.get("minWords"), 1, 10),
+  };
+  const setFilter = (patch: Record<string, string | number | undefined>) => nav(patch, { replace: true });
 
-  // The form is prefilled from the URL once; a reload never runs the lookup by itself.
-  const [keyword, setKeyword] = useState(params.get("q") ?? "");
-  const [source, setSource] = useState<(typeof SOURCES)[number]>(oneOf(params.get("source"), SOURCES, "ideas"));
-  const [limit, setLimit] = useState<(typeof LIMITS)[number]>(oneOf(params.get("limit"), LIMITS, "150"));
-  const [minVolume, setMinVolume] = useState(params.get("minVolume") ?? "");
-  const [maxDifficulty, setMaxDifficulty] = useState(params.get("maxDifficulty") ?? "");
-  const [minWords, setMinWords] = useState(params.get("minWords") ?? "");
-  const [clickstream, setClickstream] = useState(params.get("clickstream") === "1");
-  const [location, setLocation] = useState<LocationChoice>(() => {
-    const code = optInt(params.get("loc"), 1);
-    const name = params.get("locName");
-    return code && name ? { code, name } : { code: project.locationCode, name: project.locationName };
-  });
-
-  const overridden = location.code !== project.locationCode;
-  const seed = keyword.trim();
-  const input = useMemo<KeywordIdeasInput | null>(
-    () =>
-      seed
-        ? {
-            keyword: seed,
-            source,
-            limit: Number(limit),
-            includeClickstream: source === "related" && clickstream ? true : undefined,
-            minVolume: optInt(minVolume, 0),
-            maxDifficulty: optInt(maxDifficulty, 0, 100),
-            minWords: optInt(minWords, 1, 10),
-            locationCode: overridden ? location.code : undefined,
-          }
-        : null,
-    [seed, source, limit, clickstream, minVolume, maxDifficulty, minWords, overridden, location.code],
-  );
-
-  const lookup = useStickyLookup<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas");
-  const estimate = useEstimate(project.id, "keyword_ideas", input);
-  const last = lookup.last;
-
-  const [textFilter, setTextFilter] = useState("");
-  const [intentFilter, setIntentFilter] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [resultFor, setResultFor] = useState<unknown>(null);
-  const [panel, setPanel] = useState<string | null>(null);
-  const [ranMarket, setRanMarket] = useState(project.locationName);
-  if (last && resultFor !== last.result) {
-    setResultFor(last.result);
-    setSelected(new Set());
-    setTextFilter("");
-    setIntentFilter("");
-  }
+  const inputs = useMemo(() => inputsFor(keyword, market), [keyword, market]);
+  const terms = useLookupQuery<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas", inputs?.terms ?? null);
+  const related = useLookupQuery<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas", inputs?.related ?? null);
+  const suggest = useLookupQuery<SerpData, object>(project.id, "autocomplete", inputs?.suggest ?? null);
 
   const all = useMemo(() => {
-    // One row per keyword: the keyword is the row identity for selection and saving.
-    const seen = new Map<string, KeywordMetrics>();
-    for (const row of last?.result.data.keywords ?? []) if (row?.keyword && !seen.has(row.keyword)) seen.set(row.keyword, row);
-    return [...seen.values()];
-  }, [last]);
-  const needle = textFilter.trim().toLowerCase();
-  const visible = useMemo(
-    () => all.filter((row) => (!needle || row.keyword.toLowerCase().includes(needle)) && (!intentFilter || row.intent === intentFilter)),
-    [all, needle, intentFilter],
-  );
-  const hasClickstream = all.some((row) => row.clickstreamVolume != null);
-  const resultLocation = last?.input.locationCode;
+    const rows = new Map<string, Row>();
+    const add = (row: KeywordMetrics, source: "terms" | "related" | "suggestions") => {
+      const key = row.keyword?.toLowerCase();
+      if (!key || key === keyword.toLowerCase()) return;
+      const found = rows.get(key);
+      if (found) found.sources.add(source);
+      else rows.set(key, { ...row, sources: new Set([source]) });
+    };
+    for (const row of terms.data?.keywords ?? []) add(row, "terms");
+    for (const row of related.data?.keywords ?? []) add(row, "related");
+    for (const text of suggestionsOf(suggest.data)) add({ keyword: text }, "suggestions");
+    return [...rows.values()].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1));
+  }, [terms.data, related.data, suggest.data, keyword]);
 
-  const columns = useMemo<Column<KeywordMetrics>[]>(
-    () => [
-      {
-        key: "keyword",
-        header: "Keyword",
-        rowHeader: true,
-        sortValue: (row) => row.keyword,
-        render: (row) => (
-          <span className="inline-flex max-w-80 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPanel(row.keyword)}
-              title="Show Google results for this keyword"
-              className="truncate text-left font-medium underline decoration-line decoration-2 underline-offset-4 hover:decoration-accent"
-            >
-              {row.keyword}
-            </button>
-            <OpenInTool href={toolLinks.keyword(row.keyword, project)} label={keywordToolLabel(row.keyword)} />
-          </span>
-        ),
-      },
-      { key: "volume", header: "Volume", title: "Average monthly searches", align: "right", sortValue: (row) => row.volume, render: (row) => num(row.volume) },
-      ...(hasClickstream
-        ? [
-            {
-              key: "clickstream",
-              header: "Clickstream",
-              title: "Volume estimated from clickstream data",
-              align: "right",
-              sortValue: (row) => row.clickstreamVolume,
-              render: (row) => num(row.clickstreamVolume),
-            } satisfies Column<KeywordMetrics>,
-          ]
-        : []),
-      { key: "cpc", header: "CPC", title: "Average cost per click in Google Ads", align: "right", sortValue: (row) => row.cpc, render: (row) => money(row.cpc) },
-      { key: "difficulty", header: "KD", title: "Keyword difficulty, 0 (easy) to 100 (hard)", align: "right", sortValue: (row) => row.difficulty, render: (row) => <DifficultyPill value={row.difficulty} /> },
-      { key: "intent", header: "Intent", sortValue: (row) => (row.intent === "unknown" ? null : row.intent), render: (row) => <IntentBadge intent={row.intent} /> },
-      {
-        key: "competition",
-        header: "Competition",
-        title: "Advertiser competition in Google Ads, 0 to 1",
-        sortValue: (row) => row.competition,
-        firstOrder: "desc",
-        render: (row) => <Competition value={row.competition} level={row.competitionLevel} />,
-      },
-      { key: "trend", header: "12-mo trend", render: (row) => <Sparkline trend={row.trend} /> },
-    ],
-    [hasClickstream, project],
+  // Local volume for the top ideas, when a city or state is chosen: one flat-priced lookup.
+  const localInput = useMemo<LocalInput | null>(
+    () => (market.area && all.length ? { keywords: all.slice(0, LOCAL).map((row) => row.keyword), cityLocationCode: market.area.code, language: market.language } : null),
+    [all, market],
+  );
+  const local = useLookupQuery<{ keywords?: KeywordMetrics[] | null }, LocalInput>(project.id, "keyword_metrics", localInput);
+  const localVolume = useMemo(() => new Map((local.data?.keywords ?? []).map((row) => [row.keyword.toLowerCase(), row.volume ?? null] as const)), [local.data]);
+  const lookups = [terms, related, suggest, local] as LookupQuery<unknown>[];
+
+  const counts = {
+    all: all.length,
+    terms: all.filter((row) => row.sources.has("terms")).length,
+    related: all.filter((row) => row.sources.has("related")).length,
+    questions: all.filter((row) => isQuestion(row.keyword)).length,
+    suggestions: all.filter((row) => row.sources.has("suggestions")).length,
+  };
+  const needle = filters.text.trim().toLowerCase();
+  const visible = all.filter(
+    (row) =>
+      (view === "all" || (view === "questions" ? isQuestion(row.keyword) : row.sources.has(view))) &&
+      (!needle || row.keyword.toLowerCase().includes(needle)) &&
+      (!filters.intent || row.intent === filters.intent) &&
+      (filters.minVolume == null || (row.volume ?? 0) >= filters.minVolume) &&
+      (filters.maxDifficulty == null || (row.difficulty != null && row.difficulty <= filters.maxDifficulty)) &&
+      (filters.minWords == null || row.keyword.trim().split(/\s+/).length >= filters.minWords),
   );
 
-  function run() {
-    if (!input) return;
-    setUrl({
-      q: input.keyword,
-      source: source === "ideas" ? null : source,
-      limit: limit === "150" ? null : limit,
-      minVolume: input.minVolume,
-      maxDifficulty: input.maxDifficulty,
-      minWords: input.minWords,
-      clickstream: input.includeClickstream,
-      loc: overridden ? location.code : null,
-      locName: overridden ? location.name : null,
-    });
-    setRanMarket(location.name);
-    lookup.run(input);
-  }
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const columns: Column<Row>[] = [
+    { key: "keyword", header: "Keyword", rowHeader: true, sortValue: (row) => row.keyword, render: (row) => <KeywordLink keyword={row.keyword} market={market} /> },
+    { key: "volume", header: market.area ? "Country vol." : "Volume", title: "Average monthly searches", align: "right", sortValue: (row) => row.volume, render: (row) => num(row.volume) },
+    ...(market.area
+      ? [
+          {
+            key: "local",
+            header: "Local vol.",
+            title: `Monthly searches in ${marketName(market)}, for the top ${LOCAL}`,
+            align: "right",
+            sortValue: (row) => localVolume.get(row.keyword.toLowerCase()),
+            render: (row) => (local.loading ? <Skeleton className="ml-auto h-3 w-8" /> : num(localVolume.get(row.keyword.toLowerCase()))),
+          } satisfies Column<Row>,
+        ]
+      : []),
+    { key: "difficulty", header: "KD", title: "Keyword difficulty, 0 (easy) to 100 (hard)", align: "right", sortValue: (row) => row.difficulty, render: (row) => <DifficultyPill value={row.difficulty} /> },
+    { key: "cpc", header: "CPC", title: "Average cost per click in Google Ads", align: "right", sortValue: (row) => row.cpc, render: (row) => money(row.cpc) },
+    { key: "intent", header: "Intent", sortValue: (row) => (row.intent === "unknown" ? null : row.intent), render: (row) => <IntentBadge intent={row.intent} /> },
+    { key: "competition", header: "Competition", title: "Advertiser competition in Google Ads, 0 to 1", sortValue: (row) => row.competition, firstOrder: "desc", render: (row) => <Competition value={row.competition} level={row.competitionLevel} /> },
+    { key: "trend", header: "12-mo trend", render: (row) => <Sparkline trend={row.trend} /> },
+  ];
+
+  const loading = terms.loading || related.loading;
 
   return (
     <>
-      <PageHeader title="Keyword research" description="Find keywords from a seed term with volume, CPC, difficulty, intent and a 12-month trend. Country-level data." />
+      <SearchBar value={keyword} onSearch={(q) => nav({ q })} label="Seed keyword" placeholder="Enter a seed keyword, e.g. plumbing software" market={market} onMarket={changeMarket} areas pending={loading} button="Find ideas">
+        {(draft) => (
+          <>
+            <span className="text-xs text-muted">Ideas are national; with a city or state the top {LOCAL} also get their local volume.</span>
+            <span className="sm:ml-auto">
+              <DraftPrice project={project} inputs={inputsFor(draft, market)} local={Boolean(market.area)} />
+            </span>
+          </>
+        )}
+      </SearchBar>
 
-      <Card className="mb-6">
-        <form
-          className="space-y-4 p-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            run();
-          }}
-        >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <Field label="Seed keyword">
-                <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="e.g. plumbing software" maxLength={200} required autoFocus={!keyword} />
-              </Field>
-            </div>
-            <Field label="Source">
-              <Select value={source} onChange={(event) => setSource(oneOf(event.target.value, SOURCES, "ideas"))}>
-                <option value="ideas">Ideas (topically relevant)</option>
-                <option value="related">Related searches</option>
-              </Select>
-            </Field>
-            <Field label="Results">
-              <Select value={limit} onChange={(event) => setLimit(oneOf(event.target.value, LIMITS, "150"))}>
-                {LIMITS.map((value) => (
-                  <option key={value} value={value}>
-                    Up to {value}
+      <ViewErrors lookups={lookups} />
+
+      {!keyword && (
+        <>
+          <PageHeader title="Keyword ideas" description="Hundreds of keywords around a seed term: matching terms, related searches, questions and Google's suggestions, with volume, difficulty and intent." />
+          <Card>
+            <RunPrompt title="Start with a seed keyword">Enter a term your customers search for and press Enter.</RunPrompt>
+          </Card>
+        </>
+      )}
+
+      {keyword && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl font-bold tracking-tight">
+              <span className="text-muted">Keyword ideas:</span> <span className="min-w-0 truncate">{keyword}</span>
+            </h1>
+            <p className="text-[13px] text-muted">
+              {marketName(market)} · <span className="uppercase">{market.language}</span>
+            </p>
+            <ViewMeta lookups={lookups} />
+          </div>
+
+          <nav aria-label="Idea lists" className="flex flex-wrap gap-1.5">
+            {VIEWS.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-current={view === key ? "page" : undefined}
+                onClick={() => setFilter({ view: key === "all" ? undefined : key })}
+                className={cx("rounded-full border px-3 py-1 text-[13px]", view === key ? "border-ink bg-ink text-bg" : "border-line text-muted hover:border-ink hover:text-ink")}
+              >
+                {label} <span className="font-mono text-xs opacity-80">{loading ? "…" : num(counts[key])}</span>
+              </button>
+            ))}
+          </nav>
+
+          <Card>
+            <div className="grid grid-cols-2 gap-2 border-b border-line px-4 py-3 sm:grid-cols-3 lg:grid-cols-6">
+              <Input className="col-span-2 text-[13px] sm:col-span-1 lg:col-span-2" defaultValue={filters.text} key={`t-${filters.text}`} onBlur={(event) => setFilter({ include: event.target.value || undefined })} onKeyDown={(event) => event.key === "Enter" && setFilter({ include: event.currentTarget.value || undefined })} placeholder="Include words" aria-label="Include words" />
+              <Select value={filters.intent} onChange={(event) => setFilter({ intent: event.target.value || undefined })} aria-label="Intent" className="text-[13px]">
+                <option value="">Any intent</option>
+                {INTENTS.map((intent) => (
+                  <option key={intent} value={intent}>
+                    {intent[0]?.toUpperCase()}
+                    {intent.slice(1)}
                   </option>
                 ))}
               </Select>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Min volume">
-              <Input value={minVolume} onChange={(event) => setMinVolume(event.target.value)} type="number" min={0} step={10} inputMode="numeric" placeholder="Any" />
-            </Field>
-            <Field label="Max difficulty">
-              <Input value={maxDifficulty} onChange={(event) => setMaxDifficulty(event.target.value)} type="number" min={0} max={100} inputMode="numeric" placeholder="Any (0–100)" />
-            </Field>
-            <Field label="Min words">
-              <Input value={minWords} onChange={(event) => setMinWords(event.target.value)} type="number" min={1} max={10} inputMode="numeric" placeholder="Any (long-tail: 3+)" />
-            </Field>
-            {/* The standalone tools set the market in the bar above the page. */}
-            {!isToolsScope(project.id) && (
-              <Field label="Market" hint={overridden ? undefined : "Project default"}>
-                <LocationPicker value={location} onChange={setLocation} countriesOnly />
-              </Field>
-            )}
-          </div>
-          {overridden && (
-            <p className="text-xs text-muted">
-              Searching {location.name} instead of the project default.{" "}
-              <button type="button" className="font-medium text-ink underline underline-offset-2" onClick={() => setLocation({ code: project.locationCode, name: project.locationName })}>
-                Reset to {project.locationName}
-              </button>
-            </p>
-          )}
-
-          {source === "related" && (
-            <Check checked={clickstream} onChange={setClickstream}>
-              <span className="font-medium">Add clickstream volume</span>
-              <span className="block text-xs text-muted">A second volume estimate from real browsing data. Doubles the price of this search.</span>
-            </Check>
-          )}
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Button type="submit" variant="primary" loading={lookup.isPending} disabled={!input}>
-              {!lookup.isPending && <Search className="size-4" aria-hidden />} Find keywords
-            </Button>
-            <Price estimate={estimate} active={input !== null} />
-          </div>
-          <ErrorNote error={lookup.error} />
-        </form>
-      </Card>
-
-      {!last && !lookup.isPending && (
-        <Card>
-          {params.get("q") ? (
-            <RunPrompt title="Ready to run">
-              This search was loaded from the link. Click Find keywords to run it. If you ran the same search in the last 7 days it is served from the cache for free.
-            </RunPrompt>
-          ) : (
-            <RunPrompt title="Start with a seed keyword">
-              Enter a term your customers search for. You see the price before anything runs, and repeat searches within 7 days are free.
-            </RunPrompt>
-          )}
-        </Card>
-      )}
-      {!last && lookup.isPending && <Spinner label="Finding keywords" />}
-
-      {last && (
-        <Card>
-          <div className="space-y-3 border-b border-line px-4 py-3" aria-busy={lookup.isPending}>
-            <ResultMeta
-              result={last.result}
-              label={`"${last.input.keyword}" · ${num(all.length)} ${all.length === 1 ? "keyword" : "keywords"}`}
-              pending={lookup.isPending}
-              onRefresh={() => lookup.run(last.input, { refresh: true })}
-              refreshPrice={{ projectId: project.id, name: "keyword_ideas", input: last.input }}
-            />
-            {all.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="w-full sm:w-56">
-                  <Input value={textFilter} onChange={(event) => setTextFilter(event.target.value)} placeholder="Filter keywords" aria-label="Filter keywords by text" className="text-[13px]" />
-                </div>
-                <div className="w-full sm:w-44">
-                  <Select value={intentFilter} onChange={(event) => setIntentFilter(event.target.value)} aria-label="Filter by intent" className="text-[13px]">
-                    <option value="">All intents</option>
-                    {INTENTS.map((intent) => (
-                      <option key={intent} value={intent}>
-                        {intent[0]?.toUpperCase()}
-                        {intent.slice(1)}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <p className="font-mono text-xs text-muted tabular" aria-live="polite">
-                  {visible.length === all.length ? `${num(all.length)} shown` : `${num(visible.length)} of ${num(all.length)} shown`}
-                </p>
-                <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-                  <SaveSelected
-                    projectId={project.id}
-                    count={selected.size}
-                    locationCode={resultLocation}
-                    keywords={() => all.filter((row) => selected.has(row.keyword)).map(toSave)}
-                    onSaved={() => setSelected(new Set())}
-                  />
+              <Input type="number" min={0} className="text-[13px]" defaultValue={filters.minVolume ?? ""} key={`v-${filters.minVolume}`} onBlur={(event) => setFilter({ minVolume: event.target.value || undefined })} placeholder="Min volume" aria-label="Minimum volume" />
+              <Input type="number" min={0} max={100} className="text-[13px]" defaultValue={filters.maxDifficulty ?? ""} key={`d-${filters.maxDifficulty}`} onBlur={(event) => setFilter({ maxKd: event.target.value || undefined })} placeholder="Max KD" aria-label="Maximum difficulty" />
+              <Input type="number" min={1} max={10} className="text-[13px]" defaultValue={filters.minWords ?? ""} key={`w-${filters.minWords}`} onBlur={(event) => setFilter({ minWords: event.target.value || undefined })} placeholder="Min words" aria-label="Minimum words" />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
+              <p className="font-mono text-xs text-muted tabular" aria-live="polite">
+                {loading ? "Loading…" : `${num(visible.length)} of ${num(all.length)} shown`}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <SaveSelected projectId={project.id} count={selected.size} locationCode={market.locationCode} keywords={() => all.filter((row) => selected.has(row.keyword)).map((row) => toSave(row))} onSaved={() => setSelected(new Set())} />
+                {visible.length > 0 && (
                   <ExportButton
-                    filename={`keywords-${slug(last.input.keyword)}-${csvDate()}.csv`}
+                    filename={`keywords-${slug(keyword)}-${csvDate()}.csv`}
                     rows={() =>
                       visible.map((row) => ({
                         keyword: row.keyword,
                         volume: row.volume ?? "",
-                        ...(hasClickstream ? { clickstream_volume: row.clickstreamVolume ?? "" } : {}),
-                        cpc: row.cpc ?? "",
+                        ...(market.area ? { local_volume: localVolume.get(row.keyword.toLowerCase()) ?? "" } : {}),
                         difficulty: row.difficulty ?? "",
+                        cpc: row.cpc ?? "",
                         intent: row.intent ?? "",
                         competition: row.competition ?? "",
-                        competition_level: row.competitionLevel ?? "",
-                        trend: (row.trend ?? []).map((point) => `${point.month}:${point.volume}`),
+                        source: [...row.sources].join(" "),
                       }))
                     }
                   />
-                </div>
+                )}
               </div>
+            </div>
+            {loading ? (
+              <div className="space-y-2.5 p-4" aria-busy="true">
+                {Array.from({ length: 10 }, (_, i) => (
+                  <Skeleton key={i} className="h-4 w-full" />
+                ))}
+              </div>
+            ) : (
+              <DataTable
+                rows={visible}
+                columns={columns}
+                rowKey={(row) => row.keyword}
+                caption={`Keyword ideas for ${keyword}`}
+                initialSort={{ key: "volume", order: "desc" }}
+                selection={{ selected, onChange: setSelected, label: (row) => row.keyword }}
+                empty={all.length === 0 ? "No keywords came back. Try a broader seed." : "No keywords match these filters."}
+              />
             )}
-          </div>
-          <div className={lookup.isPending ? "opacity-50" : undefined}>
-            <DataTable
-              rows={visible}
-              columns={columns}
-              rowKey={(row) => row.keyword}
-              caption={`Keyword ideas for ${last.input.keyword}`}
-              initialSort={{ key: "volume", order: "desc" }}
-              selection={{ selected, onChange: setSelected, label: (row) => row.keyword }}
-              empty={all.length === 0 ? "No keywords came back. Try a broader seed, the other source, or looser filters." : "No keywords match these filters."}
-            />
-          </div>
-        </Card>
+          </Card>
+        </div>
       )}
-
-      {panel && <SerpPanel project={project} keyword={panel} market={ranMarket} locationCode={resultLocation} onClose={() => setPanel(null)} />}
     </>
   );
 }
 
+function DraftPrice({ project, inputs, local }: { project: Project; inputs: ReturnType<typeof inputsFor>; local: boolean }) {
+  const price = useViewPrice(
+    project.id,
+    [
+      ["keyword_ideas", inputs?.terms ?? null],
+      ["keyword_ideas", inputs?.related ?? null],
+      ["autocomplete", inputs?.suggest ?? null],
+    ],
+    local ? [{ min: 0.15, max: 0.15 }] : [],
+  );
+  return <Price estimate={price} active={inputs !== null} note="per seed; a repeat within a week is free" />;
+}

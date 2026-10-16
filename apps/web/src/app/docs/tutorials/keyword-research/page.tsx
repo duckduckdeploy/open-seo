@@ -25,35 +25,27 @@ export default function KeywordResearchTutorial() {
             In your project, choose <Ui>Keyword research</Ui> in the sidebar.
           </p>
         </Step>
-        <Step title="Enter a seed and choose a source">
+        <Step title="Enter a seed and a market">
           <p>
-            Type a term your customers would search for, such as <code>plumbing software</code>. Then pick a source:
-          </p>
-          <ul className="list-[square] space-y-1 pl-5">
-            <li>
-              <strong>Ideas</strong> returns keywords on the same topic. Start here.
-            </li>
-            <li>
-              <strong>Related searches</strong> returns what people also search for around the seed. It can add a
-              second, clickstream-based volume estimate, which doubles the price.
-            </li>
-          </ul>
-        </Step>
-        <Step title="Narrow it down before you pay">
-          <p>
-            Set <strong>Results</strong> (up to 50, 150, 300 or 500) and, if you want, <strong>Min volume</strong>,{' '}
-            <strong>Max difficulty</strong> and <strong>Min words</strong>. Three or more words finds long-tail
-            keywords. Filters are applied by YepAPI, so you pay only for the rows you get.
-          </p>
-          <p>
-            <strong>Market</strong> defaults to your project&apos;s country. Change it to research another country
-            without changing the project.
+            Type a term your customers would search for, such as <code>plumbing software</code>. Next to it, the
+            country and language default to your project&apos;s; change them to research another market. Pick a city or
+            state as well to get local volume for the top 100 ideas.
           </p>
         </Step>
-        <Step title="Check the price, then run">
+        <Step title="Check the price, then press Enter">
           <p>
-            The price appears next to <Ui>Find keywords</Ui>, for example <code>$0.03 – $0.08</code> for up to 150
-            results. Click it to run. The same search within 7 days is free.
+            The price of the whole search shows under the search box before anything runs. Press Enter: matching terms,
+            related terms, questions and Google&apos;s suggestions all load together into one list. The same search
+            within 7 days is free.
+          </p>
+        </Step>
+        <Step title="Narrow it down for free">
+          <p>
+            Switch between <strong>All ideas</strong>, <strong>Matching terms</strong>, <strong>Related terms</strong>,{' '}
+            <strong>Questions</strong> and <strong>Search suggestions</strong>, and filter by words, intent,{' '}
+            <strong>Min volume</strong>, <strong>Max KD</strong> and <strong>Min words</strong> (three or more finds
+            long-tail keywords). These work on what is loaded and cost nothing. The search, the market, the view and the
+            filters are all in the page address, so you can bookmark or share the exact view.
           </p>
         </Step>
       </Steps>
@@ -76,8 +68,8 @@ export default function KeywordResearchTutorial() {
         are free; they work on the results you already have.
       </p>
       <p>
-        Click a keyword to open its Google results in a side panel. <Ui>Load results</Ui> fetches the live top 20 for
-        desktop or mobile ($0.02), with the SERP features on the page and the &quot;People also ask&quot; questions.
+        Click a keyword to open its <strong>Keyword overview</strong>: difficulty, volume by country, traffic potential,
+        more ideas and the live top 10 with each result&apos;s authority, all for the same market.
       </p>
 
       <h2 id="save">Save the keywords worth targeting</h2>

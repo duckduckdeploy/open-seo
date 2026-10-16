@@ -17,6 +17,9 @@ export type KeywordMetrics = {
   serpFeatures?: string[] | null;
   trend?: TrendPoint[] | null;
   clickstreamVolume?: N;
+  /** Average backlinks and linking domains of the pages in the top 10. */
+  avgBacklinks?: N;
+  avgReferringDomains?: N;
 };
 
 export type KeywordIdeasData = { seed?: string; keywords?: KeywordMetrics[] | null };
@@ -30,6 +33,7 @@ export type KeywordIdeasInput = {
   maxDifficulty?: number;
   minWords?: number;
   locationCode?: number;
+  language?: string;
 };
 
 export type SerpResult = {
@@ -42,7 +46,7 @@ export type SerpResult = {
   data?: Record<string, unknown> | null;
 };
 export type SerpData = { query?: string; totalResults?: N; itemTypes?: string[] | null; results?: SerpResult[] | null };
-export type SerpInput = { query: string; depth: number; device: "desktop" | "mobile"; locationCode?: number };
+export type SerpInput = { query: string; depth: number; device: "desktop" | "mobile"; locationCode?: number; language?: string };
 
 export type SavedKeyword = {
   id: string;
@@ -102,6 +106,9 @@ export type DomainKeywordsInput = {
   minPosition?: number;
   maxPosition?: number;
   pathPrefix?: string;
+  exactPath?: string;
+  locationCode?: number;
+  language?: string;
 };
 
 export type DomainPage = { url: string; traffic?: N; trafficValue?: N; keywords?: N; top3?: N; top10?: N };

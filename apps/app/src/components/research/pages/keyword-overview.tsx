@@ -1,40 +1,43 @@
 "use client";
 
-import { ArrowRight, RefreshCw, Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo, useState } from "react";
 import { VolumeTrend } from "@/components/research/charts";
 import { type Column, DataTable } from "@/components/research/data-table";
-import { ExportButton, Price, RunPrompt, SaveSelected, sumEstimates, useStickyLookup } from "@/components/research/lookup-ui";
+import { ExportButton, Price, RunPrompt, SaveSelected, ViewErrors, ViewMeta } from "@/components/research/lookup-ui";
 import { DifficultyPill, IntentBadge } from "@/components/research/pills";
+import { SearchBar, useChangeMarket, useMarket, useToolNav } from "@/components/research/search-bar";
 import {
+  authorityInput,
   featureLabel,
   peopleAlsoAsk,
   RatingRing,
   SerpOverview,
   serpInput,
   Skeleton,
+  suggestionsOf,
   Switch,
   topOrganic,
-  useAuthorityFollowUp,
   useAuthoritySetting,
 } from "@/components/research/serp-overview";
 import { Sparkline } from "@/components/research/sparkline";
 import { KeywordLink } from "@/components/research/tool-link";
 import type { KeywordIdeasData, KeywordIdeasInput, KeywordMetrics, SerpData, SerpInput, TrendPoint, UrlMetricsData, UrlMetricsInput } from "@/components/research/types";
-import { csvDate, estimatedVisits, finite, isQuestion, money, slug, toSave, useRunFromLink, useSetUrl } from "@/components/research/util";
-import { Badge, Button, Card, cx, ErrorNote, Input, PageHeader } from "@/components/ui";
-import { compact, dateTime, num, usd } from "@/lib/api";
+import { chronological, csvDate, estimatedVisits, finite, isQuestion, money, slug, toSave } from "@/components/research/util";
+import { Badge, Card, cx, PageHeader } from "@/components/ui";
+import { compact, num } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
-import { type Estimate, useEstimate } from "@/lib/lookup";
-import { toolLinks } from "@/lib/scope";
+import { type Estimate, type LookupQuery, useLookupQuery, useViewPrice } from "@/lib/lookup";
+import { countryByIso } from "@/lib/countries";
+import { languageFor, lookupMarket, type Market, marketName, toolLinks } from "@/lib/scope";
+import { safeHref } from "@/lib/url";
 
-type MetricsInput = { keywords: string[] };
+type MetricsInput = { keywords: string[]; country?: string; cityLocationCode?: number; language?: string; includeClickstream?: boolean };
 type MetricsData = { keywords?: KeywordMetrics[] | null };
-type SuggestInput = { query: string };
+type SuggestInput = { query: string; locationCode?: number; language?: string };
 
-const RELATED = 50;
 /** Authority metrics for the top 10 at $0.02 per result, when the setting is on. */
 const AUTHORITY: Estimate = { min: 0.2, max: 0.2 };
 
@@ -80,7 +83,7 @@ function DifficultyGauge({ value }: { value: number | null | undefined }) {
 
 /** Twelve months of volume as small bars. */
 function MiniBars({ trend }: { trend: TrendPoint[] | null | undefined }) {
-  const points = (trend ?? []).filter((p) => p && finite(p.volume)).slice(-12);
+  const points = chronological(trend).slice(-12);
   if (points.length < 2) return null;
   const max = Math.max(1, ...points.map((p) => p.volume));
   return (
@@ -113,31 +116,52 @@ function Panel({ title, children, className, action }: { title: string; children
   );
 }
 
-function IdeaColumn({ title, items, project, more, empty }: { title: string; items: { keyword: string; volume?: number | null; difficulty?: number | null }[]; project: Project; more?: string; empty: string }) {
+function IdeaColumn({
+  title,
+  items,
+  total,
+  market,
+  more,
+  empty,
+  loading,
+}: {
+  title: string;
+  items: { keyword: string; volume?: number | null; difficulty?: number | null }[];
+  /** All the column has, for "View all". */
+  total: number;
+  market: Market;
+  more?: string;
+  empty: string;
+  loading?: boolean;
+}) {
   return (
     <section className="min-w-0">
-      <div className="mb-2 flex items-baseline justify-between gap-2 border-b border-line pb-2">
-        <h3 className="font-display text-sm font-semibold">{title}</h3>
-        {more && items.length > 0 ? (
-          <a href={more} className="text-xs font-medium text-accent-text hover:underline">
-            View all
-          </a>
-        ) : null}
-      </div>
-      {items.length === 0 ? (
+      <h3 className="mb-2 border-b border-line pb-2 font-display text-sm font-semibold">{title}</h3>
+      {loading && items.length === 0 ? (
+        <div className="space-y-2.5 py-1.5">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-3.5 w-full" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <p className="py-2 text-xs text-muted">{empty}</p>
       ) : (
         <ul>
           {items.map((item) => (
             <li key={item.keyword} className="flex items-center justify-between gap-3 py-1.5 text-[13px]">
               <span className="min-w-0 flex-1">
-                <KeywordLink keyword={item.keyword} project={project} />
+                <KeywordLink keyword={item.keyword} market={market} />
               </span>
               {finite(item.difficulty) && <DifficultyPill value={item.difficulty} />}
               <span className="w-12 shrink-0 text-right font-mono text-xs text-muted tabular">{finite(item.volume) ? compact(item.volume) : ""}</span>
             </li>
           ))}
         </ul>
+      )}
+      {more && total > 0 && (
+        <Link href={more} className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">
+          View all {num(total)} <ArrowRight className="size-3.5" aria-hidden />
+        </Link>
       )}
     </section>
   );
@@ -183,286 +207,381 @@ function OverviewSkeleton() {
   );
 }
 
+/** Markets compared in "Global search volume", besides the one being researched. */
+const GLOBAL = ["us", "gb", "in", "ca", "au", "de"];
+const IDEAS = 50;
+
+type Inputs = {
+  metrics: MetricsInput;
+  local: MetricsInput | null;
+  terms: KeywordIdeasInput;
+  related: KeywordIdeasInput;
+  suggest: SuggestInput;
+  serp: SerpInput;
+};
+
+/** Every lookup the overview runs for a keyword in a market. */
+function inputsFor(keyword: string, market: Market): Inputs | null {
+  if (!keyword) return null;
+  return {
+    metrics: { keywords: [keyword], country: market.country, language: market.language },
+    // City and state volume comes from its own endpoint; the rest of the metrics stay national.
+    local: market.area ? { keywords: [keyword], cityLocationCode: market.area.code, language: market.language } : null,
+    terms: { keyword, source: "ideas", limit: IDEAS, ...lookupMarket(market) },
+    related: { keyword, source: "related", limit: IDEAS, ...lookupMarket(market) },
+    suggest: { query: keyword, ...lookupMarket(market, { area: true }) },
+    serp: { ...serpInput(keyword, "desktop"), ...lookupMarket(market, { area: true }) },
+  };
+}
+
 /**
- * The keyword hub. One action (Enter, the button, or clicking any keyword) runs everything for a
- * keyword in this market: its metrics, related keywords, Google suggestions and the top 10, plus
- * authority metrics for the top 10 when that setting is on. The whole page shows a skeleton while
- * a new keyword loads.
+ * Volume in five other markets: always five, so the page makes the same number of lookups for any
+ * market. `clickstream` when Google Ads has no volume for the keyword (see `restricted`).
+ */
+const globalFor = (keyword: string, market: Market, clickstream: boolean): MetricsInput[] =>
+  GLOBAL.filter((country) => country !== market.country)
+    .slice(0, 5)
+    .map((country) => ({ keywords: [keyword], country, language: languageFor(country), ...(clickstream ? { includeClickstream: true } : {}) }));
+
+/** The price of searching what is typed, with every part of the view. */
+function DraftPrice({ project, market, inputs, authority }: { project: Project; market: Market; inputs: Inputs | null; authority: boolean }) {
+  const price = useViewPrice(
+    project.id,
+    [
+      ["keyword_metrics", inputs?.metrics ?? null],
+      ["keyword_metrics", inputs?.local ?? null],
+      ["keyword_ideas", inputs?.terms ?? null],
+      ["keyword_ideas", inputs?.related ?? null],
+      ["autocomplete", inputs?.suggest ?? null],
+      ["serp", inputs?.serp ?? null],
+      ...(inputs ? globalFor(inputs.metrics.keywords[0] as string, market, false) : []).map((input) => ["keyword_metrics", input] as [string, object]),
+    ],
+    authority ? [AUTHORITY] : [],
+  );
+  return <Price estimate={price} active={inputs !== null} note="per keyword; a repeat within a day is free" />;
+}
+
+const dedupe = (rows: KeywordMetrics[] | null | undefined, seed: string) => {
+  const seen = new Map<string, KeywordMetrics>();
+  for (const r of rows ?? []) if (r?.keyword && r.keyword.toLowerCase() !== seed.toLowerCase() && !seen.has(r.keyword.toLowerCase())) seen.set(r.keyword.toLowerCase(), r);
+  return [...seen.values()].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1));
+};
+
+/** Search volume of the keyword across several markets, largest first, with each one's share. */
+function GlobalVolume({ rows, loading }: { rows: { country: string; volume: number | null }[]; loading: boolean }) {
+  const known = rows.filter((row): row is { country: string; volume: number } => finite(row.volume) && row.volume > 0).sort((a, b) => b.volume - a.volume);
+  const total = known.reduce((sum, row) => sum + row.volume, 0);
+  return (
+    <Panel title="Search volume by country">
+      <p className="font-display text-4xl font-bold tabular">{loading && !known.length ? <Skeleton className="h-9 w-24" /> : compact(total || null)}</p>
+      <p className="mt-0.5 text-xs text-muted">across the {rows.length} markets below</p>
+      <ul className="mt-3 space-y-1.5">
+        {loading && !known.length
+          ? Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-3.5 w-full" />)
+          : known.map((row) => (
+              <li key={row.country} className="relative text-[13px]">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate">{countryByIso(row.country)?.[2] ?? row.country.toUpperCase()}</span>
+                  <span className="shrink-0 font-mono text-xs tabular">
+                    {compact(row.volume)} <span className="text-muted">{Math.round((row.volume / total) * 100)}%</span>
+                  </span>
+                </span>
+                <span className="mt-0.5 block h-0.5 rounded-full bg-accent" style={{ width: `${(row.volume / known[0]!.volume) * 100}%` }} aria-hidden />
+              </li>
+            ))}
+      </ul>
+    </Panel>
+  );
+}
+
+/**
+ * The keyword hub, laid out like the overviews SEOs know. The URL names a keyword and a market
+ * (?q=&country=&lang=, &loc= for a city or state); everything for it loads at once: metrics,
+ * volume in other countries, matching and related terms, Google suggestions, the top 10 and, with
+ * the setting on, the authority of the top 10. With a city or state, volume is local and the
+ * results and suggestions are what searchers there see; difficulty, intent and the ideas stay
+ * national, which is all YepAPI has below country level.
  */
 export function KeywordOverview({ project }: { project: Project }) {
   const params = useSearchParams();
-  const setUrl = useSetUrl();
-  const [keyword, setKeyword] = useState(params.get("q") ?? "");
-  const seed = keyword.trim();
+  const nav = useToolNav();
+  const changeMarket = useChangeMarket();
+  const market = useMarket(project);
+  const keyword = params.get("q")?.trim() ?? "";
   const [authority, setAuthority] = useAuthoritySetting();
-
-  const inputsFor = (k: string) => ({
-    metrics: { keywords: [k] } satisfies MetricsInput,
-    related: { keyword: k, source: "related", limit: RELATED } satisfies KeywordIdeasInput,
-    suggest: { query: k } satisfies SuggestInput,
-    serp: serpInput(k, "desktop"),
-  });
-  const inputs = useMemo(() => (seed ? inputsFor(seed) : null), [seed]);
-
-  const metrics = useStickyLookup<MetricsData, MetricsInput>(project.id, "keyword_metrics");
-  const related = useStickyLookup<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas");
-  const suggest = useStickyLookup<SerpData, SuggestInput>(project.id, "autocomplete");
-  const serp = useStickyLookup<SerpData, SerpInput>(project.id, "serp");
-  const urlMetrics = useStickyLookup<UrlMetricsData, UrlMetricsInput>(project.id, "url_metrics");
-  const followUp = useAuthorityFollowUp(serp, urlMetrics, authority);
-
-  const prices = [
-    useEstimate(project.id, "keyword_metrics", inputs?.metrics ?? null),
-    useEstimate(project.id, "keyword_ideas", inputs?.related ?? null),
-    useEstimate(project.id, "autocomplete", inputs?.suggest ?? null),
-    useEstimate(project.id, "serp", inputs?.serp ?? null),
-  ];
-  const price = {
-    data: sumEstimates(...prices.map((p) => p.data), ...(authority ? [AUTHORITY] : [])),
-    error: prices.find((p) => p.error)?.error ?? null,
-    isPending: prices.some((p) => p.isPending),
-    stale: prices.some((p) => p.stale),
-  };
-
-  function run(target = seed, refresh = false) {
-    const k = target.trim();
-    if (!k) return;
-    if (k !== keyword) setKeyword(k);
-    setUrl({ q: k });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedFor, setSelectedFor] = useState(keyword);
+  if (selectedFor !== keyword) {
+    setSelectedFor(keyword);
     setSelected(new Set());
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    const next = inputsFor(k);
-    metrics.run(next.metrics, { refresh });
-    related.run(next.related, { refresh });
-    suggest.run(next.suggest, { refresh });
-    serp.run(next.serp, { refresh });
   }
-  useRunFromLink(() => run(params.get("q") ?? ""));
 
-  const pending = metrics.isPending || related.isPending || suggest.isPending || serp.isPending;
-  const analysed = metrics.last?.input.keywords[0];
-  const running = metrics.isPending ? metrics.input?.keywords[0] : undefined;
-  // A different keyword is on its way: the whole page goes to its skeleton.
-  const loadingNew = metrics.isPending && (!analysed || running?.toLowerCase() !== analysed.toLowerCase());
+  const inputs = useMemo(() => inputsFor(keyword, market), [keyword, market]);
+  const metrics = useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", inputs?.metrics ?? null);
+  const local = useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", inputs?.local ?? null);
+  const terms = useLookupQuery<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas", inputs?.terms ?? null);
+  const related = useLookupQuery<KeywordIdeasData, KeywordIdeasInput>(project.id, "keyword_ideas", inputs?.related ?? null);
+  const suggest = useLookupQuery<SerpData, SuggestInput>(project.id, "autocomplete", inputs?.suggest ?? null);
+  const serp = useLookupQuery<SerpData, SerpInput>(project.id, "serp", inputs?.serp ?? null);
+  const urlMetrics = useLookupQuery<UrlMetricsData, UrlMetricsInput>(project.id, "url_metrics", authorityInput(serp.data, authority));
 
-  const row = metrics.last?.result.data.keywords?.find((k) => k?.keyword?.toLowerCase() === analysed?.toLowerCase()) ?? metrics.last?.result.data.keywords?.[0];
-  const relatedRows = useMemo(() => {
-    const seen = new Map<string, KeywordMetrics>();
-    for (const r of related.last?.result.data.keywords ?? []) if (r?.keyword && r.keyword.toLowerCase() !== analysed?.toLowerCase() && !seen.has(r.keyword)) seen.set(r.keyword, r);
-    return [...seen.values()];
-  }, [related.last, analysed]);
-  const byVolume = useMemo(() => [...relatedRows].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1)), [relatedRows]);
+  const findRow = (data: MetricsData | undefined) => data?.keywords?.find((k) => k?.keyword?.toLowerCase() === keyword.toLowerCase()) ?? data?.keywords?.[0];
+  const row = findRow(metrics.data);
+  // Google Ads reports no volume for some topics (VPNs, gambling, finance…). Then the volume is
+  // the clickstream estimate, fetched for this keyword and the other markets.
+  const restricted = Boolean(metrics.result) && !(finite(row?.volume) && row.volume > 0);
+  const fallback = useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", restricted && inputs ? { ...inputs.metrics, includeClickstream: true } : null);
+  const globalInputs = useMemo(() => (keyword && metrics.result ? globalFor(keyword, market, restricted) : null), [keyword, market, metrics.result, restricted]);
+  const global = [
+    useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", globalInputs?.[0] ?? null),
+    useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", globalInputs?.[1] ?? null),
+    useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", globalInputs?.[2] ?? null),
+    useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", globalInputs?.[3] ?? null),
+    useLookupQuery<MetricsData, MetricsInput>(project.id, "keyword_metrics", globalInputs?.[4] ?? null),
+  ];
+  const lookups = [metrics, local, terms, related, suggest, serp, urlMetrics, fallback, ...global] as LookupQuery<unknown>[];
+  const volumeOf = (r: KeywordMetrics | undefined) => (restricted ? (r?.clickstreamVolume ?? null) : (r?.volume ?? null));
+
+  function search(k: string) {
+    nav({ q: k });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  const localRow = findRow(local.data);
+  const countryVolume = volumeOf(findRow(restricted ? fallback.data : metrics.data));
+  const volume = market.area ? (localRow?.volume ?? null) : countryVolume;
+  const cpc = (market.area ? localRow?.cpc : null) ?? row?.cpc;
+  const trend = (market.area ? localRow?.trend : null) ?? row?.trend;
+
+  const termRows = useMemo(() => dedupe(terms.data?.keywords, keyword), [terms.data, keyword]);
+  const relatedRows = useMemo(() => dedupe(related.data?.keywords, keyword), [related.data, keyword]);
   const questions = useMemo(() => {
-    // Questions around the topic, not the seed with a word added ("how to fix a leak best").
-    const seedLower = (analysed ?? "").toLowerCase();
-    const fromRelated = byVolume.filter((r) => isQuestion(r.keyword) && !r.keyword.toLowerCase().startsWith(seedLower)).map((r) => ({ keyword: r.keyword, volume: r.volume, difficulty: r.difficulty }));
-    const asked = peopleAlsoAsk(serp.last?.result.data.results ?? []).map((q) => ({ keyword: q, volume: null, difficulty: null }));
+    // Questions around the topic: from both idea lists and Google's People Also Ask.
+    const fromIdeas = dedupe([...termRows, ...relatedRows], keyword)
+      .filter((r) => isQuestion(r.keyword))
+      .map((r) => ({ keyword: r.keyword, volume: r.volume, difficulty: r.difficulty }));
+    const asked = peopleAlsoAsk(serp.data?.results ?? []).map((q) => ({ keyword: q, volume: null, difficulty: null }));
     const seen = new Set<string>();
-    return [...fromRelated, ...asked].filter((q) => !seen.has(q.keyword.toLowerCase()) && Boolean(seen.add(q.keyword.toLowerCase())));
-  }, [byVolume, serp.last, analysed]);
+    return [...fromIdeas, ...asked].filter((q) => !seen.has(q.keyword.toLowerCase()) && Boolean(seen.add(q.keyword.toLowerCase())));
+  }, [termRows, relatedRows, serp.data, keyword]);
   const suggestions = useMemo(
     () =>
-      [...new Set((suggest.last?.result.data.results ?? []).map((r) => r.title?.trim()).filter((t): t is string => Boolean(t) && t?.toLowerCase() !== analysed?.toLowerCase()))].map((k) => ({
-        keyword: k,
-      })),
-    [suggest.last, analysed],
+      suggestionsOf(suggest.data)
+        .filter((k) => k.toLowerCase() !== keyword.toLowerCase())
+        .map((k) => ({ keyword: k })),
+    [suggest.data, keyword],
   );
   const features = useMemo(
-    () => [...new Set([...(row?.serpFeatures ?? []), ...(serp.last?.result.data.itemTypes ?? [])].filter((t) => t && t !== "organic").map(featureLabel))],
-    [row, serp.last],
+    () => [...new Set([...(row?.serpFeatures ?? []), ...(serp.data?.itemTypes ?? [])].filter((t) => t && t !== "organic" && t !== "relatedSearches").map(featureLabel))],
+    [row, serp.data],
   );
+  const first = topOrganic(serp.data)[0];
+  const firstMetrics = urlMetrics.data?.urls?.find((m) => m.url === first?.url);
+  // Traffic potential: what the #1 page gets from all its keywords, when known; else an estimate
+  // from this keyword alone. Metrics of a URL with a query string ("/search?q=…") cover the whole
+  // path, every search on the site, so those are not used.
+  const pageTraffic = first?.url && !first.url.includes("?") ? firstMetrics?.page?.traffic : null;
+  const potential = finite(pageTraffic) ? pageTraffic : estimatedVisits(volume, 1);
   const top = useMemo(() => {
-    const urls = topOrganic(serp.last?.result.data).map((r) => r.url as string);
-    const rows = (urlMetrics.last?.result.data.urls ?? []).filter((m) => urls.includes(m.url));
-    const refs = rows.map((m) => m.page?.refDomains).filter(finite).sort((a, b) => a - b);
-    const drs = rows.map((m) => m.domain?.domainRating).filter(finite);
-    return {
-      medianRefs: refs.length ? refs[Math.floor(refs.length / 2)] : null,
-      avgDr: drs.length ? Math.round(drs.reduce((a, b) => a + b, 0) / drs.length) : null,
-    };
-  }, [serp.last, urlMetrics.last]);
+    const urls = topOrganic(serp.data).map((r) => r.url as string);
+    const drs = (urlMetrics.data?.urls ?? []).filter((m) => urls.includes(m.url)).map((m) => m.domain?.domainRating).filter(finite);
+    return { avgDr: drs.length ? Math.round(drs.reduce((a, b) => a + b, 0) / drs.length) : null };
+  }, [serp.data, urlMetrics.data]);
+  const globalRows = [
+    { country: market.country, volume: countryVolume },
+    ...(globalInputs ?? []).map((input, index) => ({ country: input.country as string, volume: volumeOf(findRow(global[index]?.data)) })),
+  ];
 
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const columns = useMemo<Column<KeywordMetrics>[]>(
     () => [
-      { key: "keyword", header: "Keyword", rowHeader: true, sortValue: (r) => r.keyword, render: (r) => <KeywordLink keyword={r.keyword} project={project} /> },
+      { key: "keyword", header: "Keyword", rowHeader: true, sortValue: (r) => r.keyword, render: (r) => <KeywordLink keyword={r.keyword} market={market} /> },
       { key: "volume", header: "Volume", align: "right", sortValue: (r) => r.volume, render: (r) => num(r.volume) },
       { key: "difficulty", header: "KD", title: "Keyword difficulty, 0 (easy) to 100 (hard)", align: "right", sortValue: (r) => r.difficulty, render: (r) => <DifficultyPill value={r.difficulty} /> },
       { key: "cpc", header: "CPC", align: "right", sortValue: (r) => r.cpc, render: (r) => money(r.cpc) },
       { key: "intent", header: "Intent", sortValue: (r) => r.intent, render: (r) => <IntentBadge intent={r.intent} /> },
       { key: "trend", header: "12-mo trend", render: (r) => <Sparkline trend={r.trend} /> },
     ],
-    [project],
+    [market],
   );
+  const allIdeas = useMemo(() => dedupe([...termRows, ...relatedRows], keyword), [termRows, relatedRows, keyword]);
 
-  const errors = [metrics.error, related.error, suggest.error, serp.error].filter(Boolean);
-  const spent = [metrics, related, suggest, serp, urlMetrics].reduce((total, l) => total + (l.last && !l.last.result.cached ? l.last.result.costUsd : 0), 0);
-  const allCached = [metrics, related, suggest, serp].every((l) => l.last?.result.cached);
+  const loading = metrics.loading || local.loading;
+  const ideasLink = (view?: string) => toolLinks.ideas(keyword, market, view);
 
   return (
     <>
-      <PageHeader title="Keyword overview" description="Everything about one keyword: how many search for it, how hard it is to rank, what else people search, and who ranks today." />
-
-      <form
-        className="mb-8 rounded-xl border border-line bg-surface p-3 shadow-hard-sm sm:p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          run();
-        }}
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-64 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
-            <Input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Enter a keyword, e.g. emergency plumber" maxLength={200} required autoFocus={!keyword} aria-label="Keyword" className="h-11 pl-9 text-base" />
-          </div>
-          <Button type="submit" variant="primary" loading={pending} disabled={!seed} className="h-11 px-5">
-            Analyse
-          </Button>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1">
-          <Switch checked={authority} onChange={setAuthority} label="Include authority metrics">
-            <span>
-              Authority metrics <span className="text-muted">(DR, UR, links and traffic of the top 10)</span>
+      <SearchBar value={keyword} onSearch={search} label="Keyword" placeholder="Enter a keyword, e.g. emergency plumber" market={market} onMarket={changeMarket} areas pending={loading}>
+        {(draft) => (
+          <>
+            <Switch checked={authority} onChange={setAuthority} label="Include authority metrics">
+              <span>
+                Authority metrics <span className="text-muted">(DR, UR, links, traffic and value of the top 10)</span>
+              </span>
+            </Switch>
+            <span className="sm:ml-auto">
+              <DraftPrice project={project} market={market} inputs={inputsFor(draft, market)} authority={authority} />
             </span>
-          </Switch>
-          <span className="sm:ml-auto">
-            <Price estimate={price} active={seed.length > 0} note="per keyword; a repeat within a day is free" />
-          </span>
-        </div>
-      </form>
+          </>
+        )}
+      </SearchBar>
 
-      {errors.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {errors.map((error, index) => (
-            <ErrorNote key={index} error={error} />
-          ))}
-        </div>
+      <ViewErrors lookups={lookups} />
+
+      {!keyword && (
+        <>
+          <PageHeader title="Keyword overview" description="Everything about one keyword: how many search for it, how hard it is to rank, what else people search, and who ranks today." />
+          <Card>
+            <RunPrompt title="Start with a keyword">
+              Type a keyword and press Enter. You see its volume, difficulty and intent, the keywords around it, and who ranks for it on Google. Pick a city or state for local volume and
+              results. Click any keyword to go deeper.
+            </RunPrompt>
+          </Card>
+        </>
       )}
 
-      {!metrics.last && !pending && (
-        <Card>
-          <RunPrompt title="Start with a keyword">
-            Type a keyword and press Enter. You see its volume, difficulty and intent, the keywords around it, and who ranks for it on Google. Click any keyword to go deeper.
-          </RunPrompt>
-        </Card>
-      )}
+      {keyword && loading && <OverviewSkeleton />}
 
-      {loadingNew && <OverviewSkeleton />}
-
-      {metrics.last && analysed && !loadingNew && (
-        <div className="space-y-6" aria-busy={pending}>
-          <div className="flex flex-wrap items-end justify-between gap-3">
+      {keyword && !loading && (metrics.result || local.result) && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
             <div className="min-w-0">
-              <h2 className="truncate font-display text-3xl font-bold tracking-tight">{analysed}</h2>
+              <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl font-bold tracking-tight">
+                <span className="text-muted">Overview:</span>
+                <span className="min-w-0 truncate">{keyword}</span>
+                {row?.intent && row.intent !== "unknown" && <IntentBadge intent={row.intent} />}
+              </h1>
               <p className="mt-1 text-[13px] text-muted">
-                <CountryChip country={project.country} /> {project.locationName} · <span className="uppercase">{project.language}</span> · {allCached ? "from the cache, free" : `cost ${usd(spent)}`} · {dateTime(metrics.last.result.fetchedAt)}
+                <CountryChip country={market.country} /> {marketName(market)} · <span className="uppercase">{market.language}</span>
               </p>
             </div>
-            <Button size="sm" variant="ghost" onClick={() => run(analysed, true)} loading={pending}>
-              {!pending && <RefreshCw className="size-3.5" aria-hidden />} Refresh all
-            </Button>
+            <div className="w-full sm:w-auto">
+              <ViewMeta lookups={lookups} />
+            </div>
           </div>
 
-          {row ? (
+          {row || localRow ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Panel title="Keyword difficulty">
-                <DifficultyGauge value={row.difficulty} />
+                <DifficultyGauge value={row?.difficulty} />
                 <p className="mt-3 text-xs text-muted">
-                  {authority && finite(top.medianRefs)
-                    ? `The top 10 pages have a median of ${num(top.medianRefs)} referring domains${finite(top.avgDr) ? `; their sites average DR ${top.avgDr}` : ""}.`
-                    : authority && followUp.loading
-                      ? "Checking the backlinks of the top 10…"
-                      : "Turn on authority metrics to see the backlinks the top 10 have."}
+                  {finite(row?.avgReferringDomains) && row.avgReferringDomains > 0
+                    ? `≈ ${num(Math.round(row.avgReferringDomains))} linking domains to rank in the top 10`
+                    : "Links needed to rank are not known for this keyword."}
+                  {authority && finite(top.avgDr) && ` · top 10 average DR ${top.avgDr}`}
                 </p>
               </Panel>
-              <Panel title="Search volume" action={<CountryChip country={project.country} />}>
-                <p className="font-display text-4xl font-bold tabular">{compact(row.volume)}</p>
+              <Panel title={market.area ? "Local search volume" : "Search volume"} action={<CountryChip country={market.country} />}>
+                <p className="font-display text-4xl font-bold tabular">{restricted && !market.area && fallback.loading ? <Skeleton className="h-9 w-24" /> : compact(volume)}</p>
+                {restricted && !market.area && (
+                  <p className="text-xs text-muted" title="Google Ads gives no volume for this topic, so this is estimated from clickstream data">
+                    clickstream estimate
+                  </p>
+                )}
+                {market.area && finite(countryVolume) && <p className="text-xs text-muted">{compact(countryVolume)} in all of {market.locationName}</p>}
                 <div className="mt-3">
-                  <MiniBars trend={row.trend} />
+                  <MiniBars trend={trend} />
                 </div>
-                <p className="mt-2 text-xs text-muted">
-                  Traffic potential{" "}
-                  <span className="font-mono text-ink tabular" title="Estimated monthly visits for the first result: volume times a typical click-through rate">
-                    ≈ {compact(estimatedVisits(row.volume, 1))}
-                  </span>{" "}
-                  visits to #1
-                </p>
-              </Panel>
-              <Panel title="Cost per click">
-                <p className="font-display text-4xl font-bold tabular">{money(row.cpc)}</p>
-                <div className="mt-4 space-y-1.5">
+                <div className="mt-3 space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted">Advertiser competition</span>
-                    <span className="font-mono capitalize tabular">{row.competitionLevel?.toLowerCase() ?? (finite(row.competition) ? row.competition.toFixed(2) : "—")}</span>
+                    <span className="text-muted">CPC {money(cpc)}</span>
+                    <span className="font-mono capitalize text-muted tabular">competition {row?.competitionLevel?.toLowerCase() ?? (finite(row?.competition) ? row.competition.toFixed(2) : "—")}</span>
                   </div>
-                  <Meter value={row.competition} />
+                  <Meter value={row?.competition} />
                 </div>
               </Panel>
-              <Panel title="Intent and results page">
-                <div className="flex flex-wrap gap-1.5">{row.intent ? <IntentBadge intent={row.intent} /> : <span className="text-sm text-muted">Intent unknown</span>}</div>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {features.length ? features.slice(0, 8).map((f) => <Badge key={f}>{f}</Badge>) : <span className="text-xs text-muted">Organic links only</span>}
+              <Panel title="Traffic potential">
+                <p className="font-display text-4xl font-bold tabular" title={finite(pageTraffic) ? "Monthly organic visits of the #1 page, from all its keywords" : "Estimated monthly visits to #1 from this keyword alone"}>
+                  {compact(potential)}
+                </p>
+                <p className="text-xs text-muted">{finite(potential) && finite(cpc) && cpc > 0 ? `Value $${compact(potential * cpc)} / month` : "Value unknown: no ad prices for this keyword"}</p>
+                <div className="mt-3 border-t border-line pt-3">
+                  <p className="text-xs text-muted">Top ranking result</p>
+                  {serp.loading ? (
+                    <Skeleton className="mt-1 h-8 w-full" />
+                  ) : first?.url ? (
+                    <>
+                      <a href={safeHref(first.url) ?? undefined} target="_blank" rel="noreferrer noopener" className="mt-0.5 line-clamp-2 text-[13px] font-medium text-accent-text hover:underline">
+                        {first.title || first.url}
+                      </a>
+                      <p className="truncate font-mono text-[11px] text-muted" title={first.url}>
+                        {first.url.replace(/^https?:\/\//, "")}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted">No organic results.</p>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {features.slice(0, 6).map((f) => (
+                    <Badge key={f}>{f}</Badge>
+                  ))}
                 </div>
               </Panel>
+              <GlobalVolume rows={globalRows} loading={!globalInputs || global.some((g) => g.loading) || fallback.loading} />
             </div>
           ) : (
             <Card>
-              <p className="p-5 text-sm text-muted">No data for this keyword in {project.locationName}. It may be too rare to measure, or misspelled. The keywords and results below may still help.</p>
+              <p className="p-5 text-sm text-muted">No data for this keyword in {marketName(market)}. It may be too rare to measure, or misspelled. The keywords and results below may still help.</p>
             </Card>
           )}
 
           <section className="rounded-xl border border-line bg-surface p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-display text-base font-semibold">Keyword ideas</h3>
-              <Link href={toolLinks.ideas(analysed, project)} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-text hover:underline">
-                Find more ideas <ArrowRight className="size-3.5" aria-hidden />
-              </Link>
-            </div>
-            <div className="grid gap-8 md:grid-cols-3">
-              <IdeaColumn title={`Related keywords · ${relatedRows.length}`} items={byVolume.slice(0, 8)} project={project} more="#related" empty="No related searches came back." />
-              <IdeaColumn title={`Questions · ${questions.length}`} items={questions.slice(0, 8)} project={project} empty="No questions found around this keyword." />
-              <IdeaColumn title={`Google suggests · ${suggestions.length}`} items={suggestions.slice(0, 8)} project={project} empty="No suggestions came back." />
+            <h2 className="mb-4 font-display text-base font-semibold">Keyword ideas</h2>
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
+              <IdeaColumn title="Terms match" items={termRows.slice(0, 6)} total={termRows.length} market={market} more={ideasLink()} loading={terms.loading} empty="No matching terms came back." />
+              <IdeaColumn title="Questions" items={questions.slice(0, 6)} total={questions.length} market={market} more={ideasLink("questions")} loading={terms.loading || related.loading || serp.loading} empty="No questions found around this keyword." />
+              <IdeaColumn title="Also rank for" items={relatedRows.slice(0, 6)} total={relatedRows.length} market={market} more={ideasLink("related")} loading={related.loading} empty="No related searches came back." />
+              <IdeaColumn title="Search suggestions" items={suggestions.slice(0, 6)} total={suggestions.length} market={market} more={ideasLink("suggestions")} loading={suggest.loading} empty="No suggestions came back." />
             </div>
           </section>
 
-          {row?.trend && row.trend.length > 1 && (
+          {trend && trend.length > 1 && (
             <section className="rounded-xl border border-line bg-surface p-5">
-              <VolumeTrend trend={row.trend} />
+              <VolumeTrend trend={trend} />
             </section>
           )}
 
           <section className="rounded-xl border border-line bg-surface p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-display text-base font-semibold">SERP overview</h3>
-              {authority && finite(top.avgDr) && (
-                <span className="flex items-center gap-2 text-xs text-muted">
-                  Average DR <RatingRing value={top.avgDr} label="Average Domain Rating" />
-                </span>
+              <h2 className="font-display text-base font-semibold">
+                SERP overview for “{keyword}”{market.area ? ` · ${marketName(market)}` : ""}
+              </h2>
+              {!authority && (
+                <button type="button" onClick={() => setAuthority(true)} className="text-[13px] font-medium text-accent-text hover:underline">
+                  Show DR, backlinks and traffic
+                </button>
               )}
             </div>
-            <SerpOverview project={project} keyword={analysed} volume={row?.volume ?? null} serp={serp} metrics={urlMetrics} authority={authority} />
+            <SerpOverview market={market} keyword={keyword} volume={volume} serp={serp} metrics={urlMetrics} authority={authority} />
           </section>
 
-          <section id="related" className="scroll-mt-24 rounded-xl border border-line bg-surface">
+          <section className="rounded-xl border border-line bg-surface">
             <div className="flex flex-wrap items-center gap-3 border-b border-line px-5 py-4">
-              <h3 className="font-display text-base font-semibold">Related keywords</h3>
-              <span className="font-mono text-xs text-muted tabular">{num(relatedRows.length)}</span>
+              <h2 className="font-display text-base font-semibold">All keyword ideas</h2>
+              <span className="font-mono text-xs text-muted tabular">{num(allIdeas.length)}</span>
+              {market.area && <span className="text-xs text-muted">volumes for all of {market.locationName}</span>}
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <SaveSelected projectId={project.id} count={selected.size} keywords={() => relatedRows.filter((r) => selected.has(r.keyword)).map(toSave)} onSaved={() => setSelected(new Set())} />
+                <SaveSelected
+                  projectId={project.id}
+                  count={selected.size}
+                  locationCode={market.locationCode}
+                  keywords={() => allIdeas.filter((r) => selected.has(r.keyword)).map(toSave)}
+                  onSaved={() => setSelected(new Set())}
+                />
                 <ExportButton
-                  filename={`related-${slug(analysed)}-${csvDate()}.csv`}
-                  rows={() => relatedRows.map((r) => ({ keyword: r.keyword, volume: r.volume ?? "", difficulty: r.difficulty ?? "", cpc: r.cpc ?? "", intent: r.intent ?? "" }))}
+                  filename={`ideas-${slug(keyword)}-${csvDate()}.csv`}
+                  rows={() => allIdeas.map((r) => ({ keyword: r.keyword, volume: r.volume ?? "", difficulty: r.difficulty ?? "", cpc: r.cpc ?? "", intent: r.intent ?? "" }))}
                 />
               </div>
             </div>
             <DataTable
-              rows={relatedRows}
+              rows={allIdeas}
               columns={columns}
               rowKey={(r) => r.keyword}
-              caption={`Keywords related to ${analysed}`}
+              caption={`Keyword ideas for ${keyword}`}
               initialSort={{ key: "volume", order: "desc" }}
               selection={{ selected, onChange: setSelected, label: (r) => r.keyword }}
-              empty={related.isPending ? "Loading related keywords…" : "No related searches came back for this keyword."}
+              empty={terms.loading || related.loading ? "Loading keyword ideas…" : "No keyword ideas came back for this keyword."}
             />
           </section>
         </div>

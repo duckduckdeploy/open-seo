@@ -258,20 +258,27 @@ export const lookups: Lookup[] = [
     }),
     estimate: (i) => est(estimateCost("/v1/seo/domain/keywords", { domain: i.domain, limit: i.limit })),
     run: async (yep, i, p) => {
+      // YepAPI cannot sort by traffic. Nearly all of a domain's traffic comes from keywords in the
+      // top 20, so "most traffic" asks for those by volume and ranks them by traffic here.
+      const byTraffic = i.sort === "traffic:desc";
+      const maxPosition = i.maxPosition ?? (byTraffic ? 20 : undefined);
       const filters: KeywordFilter[] = [];
       if (i.minPosition != null) filters.push({ field: "position", op: ">=", value: i.minPosition });
-      if (i.maxPosition != null) filters.push({ field: "position", op: "<=", value: i.maxPosition });
+      if (maxPosition != null) filters.push({ field: "position", op: "<=", value: maxPosition });
+      // The URL filter matches the path only ("/pricing"), never a full URL.
       if (i.exactPath) filters.push({ field: "url", op: "=", value: i.exactPath });
       else if (i.pathPrefix) filters.push({ field: "url", op: "like", value: `${i.pathPrefix}%` });
       const res = await yep.domain.keywords({
         domain: i.domain,
         limit: i.limit,
         offset: i.offset || undefined,
-        sort: [i.sort],
+        sort: [byTraffic ? "volume:desc" : i.sort],
         filters: filters.length ? filters : undefined,
         ...loc(i, p),
       });
-      return { data: res.data, costUsd: res.costUsd };
+      if (!byTraffic) return { data: res.data, costUsd: res.costUsd };
+      const keywords = [...(res.data.keywords ?? [])].sort((a, b) => (b.traffic ?? 0) - (a.traffic ?? 0));
+      return { data: { ...res.data, keywords }, costUsd: res.costUsd };
     },
   }),
   define({

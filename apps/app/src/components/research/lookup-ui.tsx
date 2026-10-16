@@ -7,7 +7,7 @@ import { type ReactNode, useState } from "react";
 import { Button, CostNote, ErrorNote, Select } from "@/components/ui";
 import { ApiError, api, dateTime, num, usd } from "@/lib/api";
 import { useProjects } from "@/lib/hooks";
-import { downloadCsv, type Estimate, type LookupResult, useEstimate, useLookup } from "@/lib/lookup";
+import { downloadCsv, type Estimate, type LookupQuery, type LookupResult, useEstimate, useLookup } from "@/lib/lookup";
 import { isToolsScope } from "@/lib/scope";
 import type { KeywordToSave } from "./types";
 
@@ -101,6 +101,43 @@ export function ResultMeta({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * What a whole view cost and when it was fetched, with one refresh for all its lookups. A view is
+ * one search: its lookups run together and are refreshed together.
+ */
+export function ViewMeta({ lookups, label }: { lookups: LookupQuery<unknown>[]; label?: ReactNode }) {
+  const done = lookups.filter((lookup) => lookup.result);
+  if (!done.length) return null;
+  const spent = done.reduce((total, lookup) => total + (lookup.result && !lookup.result.cached ? lookup.result.costUsd : 0), 0);
+  const allCached = done.every((lookup) => lookup.result?.cached);
+  const fetched = done.map((lookup) => lookup.result?.fetchedAt ?? "").sort().at(-1);
+  const refreshing = lookups.some((lookup) => lookup.refreshing);
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <p className="min-w-0 text-[13px] text-muted">
+        {label && <>{label} · </>}
+        {allCached ? "from the cache, free" : `cost ${usd(spent)}`} · fetched {dateTime(fetched)}
+      </p>
+      <Button size="sm" variant="ghost" loading={refreshing} onClick={() => void Promise.all(lookups.map((lookup) => lookup.refresh()))}>
+        {!refreshing && <RefreshCw className="size-3.5" aria-hidden />} Refresh (pay again)
+      </Button>
+    </div>
+  );
+}
+
+/** The errors of a view's lookups, each once. */
+export function ViewErrors({ lookups }: { lookups: LookupQuery<unknown>[] }) {
+  const errors = lookups.map((lookup) => lookup.error).filter(Boolean);
+  if (!errors.length) return null;
+  return (
+    <div className="mb-6 space-y-2">
+      {errors.map((error, index) => (
+        <ErrorNote key={index} error={error} />
+      ))}
     </div>
   );
 }

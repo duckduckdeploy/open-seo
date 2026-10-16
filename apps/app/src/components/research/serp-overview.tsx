@@ -2,18 +2,18 @@
 
 import { FileSearch, Link2 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { cx, ErrorNote } from "@/components/ui";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { cx } from "@/components/ui";
 import { compact, num } from "@/lib/api";
-import type { Project } from "@/lib/hooks";
-import { toolLinks } from "@/lib/scope";
+import type { LookupQuery } from "@/lib/lookup";
+import { type Market, toolLinks } from "@/lib/scope";
 import { hostOf, safeHref } from "@/lib/url";
-import { ExportButton, useStickyLookup } from "./lookup-ui";
-import type { SerpData, SerpInput, SerpResult, UrlMetricsData, UrlMetricsInput, UrlMetricsRow } from "./types";
+import { ExportButton } from "./lookup-ui";
+import type { SerpData, SerpInput, SerpResult, UrlMetricsData, UrlMetricsRow } from "./types";
 import { csvDate, estimatedVisits, finite, slug } from "./util";
 
 export type Device = SerpInput["device"];
-export const serpInput = (keyword: string, device: Device): SerpInput => ({ query: keyword, depth: 10, device });
+export const serpInput = (keyword: string, device: Device): SerpInput => ({ query: keyword, depth: 20, device });
 
 const FEATURE_LABELS: Record<string, string> = {
   paid: "Ads",
@@ -54,6 +54,15 @@ export function peopleAlsoAsk(results: SerpResult[]) {
     }
   }
   return [...new Set(found)];
+}
+
+/** Google autocomplete suggestions, in Google's order. YepAPI puts the text in data.suggestion. */
+export function suggestionsOf(data: SerpData | undefined) {
+  const found = (data?.results ?? []).map((r) => {
+    const text = r.data && typeof r.data.suggestion === "string" ? r.data.suggestion : r.title;
+    return text?.trim() ?? "";
+  });
+  return [...new Set(found.filter(Boolean))];
 }
 
 // ── Authority metrics setting, remembered in this browser ────────────────────
@@ -168,39 +177,64 @@ function SkeletonRows({ columns }: { columns: number }) {
   );
 }
 
-export type SerpLookup = ReturnType<typeof useStickyLookup<SerpData, SerpInput>>;
-export type MetricsLookup = ReturnType<typeof useStickyLookup<UrlMetricsData, UrlMetricsInput>>;
+export type SerpLookup = LookupQuery<SerpData>;
+export type MetricsLookup = LookupQuery<UrlMetricsData>;
 
 /** The top organic results of a SERP result, at most 10. */
 export const topOrganic = (data: SerpData | undefined) => (data?.results ?? []).filter((r) => r.type === "organic" && r.url).slice(0, 10);
 
+/** Input for authority metrics of a SERP's top 10, when the setting is on and the SERP is in. */
+export function authorityInput(serp: SerpData | undefined, authority: boolean) {
+  const urls = topOrganic(serp).map((r) => r.url as string);
+  return authority && urls.length ? { urls } : null;
+}
+
+type Block =
+  | { kind: "organic"; result: SerpResult; rank: number }
+  | { kind: "feature"; type: string; position: number | null; items: SerpResult[] };
+
 /**
- * Loads authority metrics for each new set of results while the setting is on. Part of the same
- * run as the SERP: the caller's single action starts the SERP, and this follows it.
+ * The page as Google lays it out, up to the 10th organic result: organic results with their rank
+ * among organic results, and each SERP feature (several local pack places, say) as one block.
+ * Positions are absolute, as YepAPI gives them, so a feature takes its place in the count.
  */
-export function useAuthorityFollowUp(serp: SerpLookup, metrics: MetricsLookup, authority: boolean) {
-  const urls = useMemo(() => topOrganic(serp.last?.result.data).map((r) => r.url as string), [serp.last]);
-  const have = useMemo(() => new Set((metrics.last?.result.data.urls ?? []).map((row) => row.url)), [metrics.last]);
-  const complete = urls.length > 0 && urls.every((url) => have.has(url));
-  const requested = useRef<string | null>(null);
-  const key = urls.join("\n");
-  useEffect(() => {
-    if (!authority || !urls.length || complete || metrics.isPending || requested.current === key) return;
-    requested.current = key;
-    metrics.run({ urls });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per set of results
-  }, [authority, key, complete]);
-  return { complete, loading: authority && !complete && urls.length > 0 };
+function layout(data: SerpData | undefined): Block[] {
+  const blocks: Block[] = [];
+  let rank = 0;
+  for (const result of data?.results ?? []) {
+    if (result.type === "organic" && result.url) {
+      if (rank === 10) break;
+      rank += 1;
+      blocks.push({ kind: "organic", result, rank });
+      continue;
+    }
+    if (result.type === "relatedSearches" || result.type === "organic") continue;
+    const previous = blocks.at(-1);
+    if (previous?.kind === "feature" && previous.type === result.type) previous.items.push(result);
+    else blocks.push({ kind: "feature", type: result.type, position: finite(result.position) ? result.position : null, items: [result] });
+  }
+  return blocks;
+}
+
+/** One line about a feature block: what is in it. */
+function featureSummary(block: Extract<Block, { kind: "feature" }>) {
+  if (block.type === "peopleAlsoAsk") {
+    const questions = peopleAlsoAsk(block.items);
+    return questions.length ? questions.slice(0, 3).join(" · ") : null;
+  }
+  const names = block.items.map((item) => item.title).filter(Boolean);
+  return names.length ? names.slice(0, 4).join(" · ") : null;
 }
 
 /**
- * The top 10 Google results for a keyword as a table. Each site opens its Domain overview; the
- * icons open the Page analyser and the page's backlinks. Estimated visits come from the keyword's
- * volume. With authority metrics on, DR, UR, referring domains, traffic and keywords are added.
- * Display only: the caller runs the lookups from its one action.
+ * The top 10 Google results for a keyword, laid out as on the page: features (AI overview, People
+ * also ask, local pack…) in their places, and for each organic result its estimated visits from
+ * this keyword. With authority metrics on: words, DR, UR, backlinks, linking domains, traffic,
+ * traffic value and keywords of each page. Each site opens its Domain overview; the icons open
+ * the Page analyser and the page's backlinks. Display only: the page runs the lookups.
  */
 export function SerpOverview({
-  project,
+  market,
   keyword,
   volume,
   serp,
@@ -208,30 +242,33 @@ export function SerpOverview({
   authority,
   loading,
 }: {
-  project: Project;
+  market: Market;
   keyword: string;
   volume?: number | null;
   serp: SerpLookup;
   metrics: MetricsLookup;
   authority: boolean;
-  /** Show the skeleton even though an older result is on hand (another keyword is loading). */
+  /** Show the skeleton whatever is on hand. */
   loading?: boolean;
 }) {
-  const last = loading ? null : serp.last;
-  const organic = useMemo(() => topOrganic(last?.result.data), [last]);
-  const byUrl = useMemo(() => new Map((metrics.last?.result.data.urls ?? []).map((row) => [row.url, row] as const)), [metrics.last]);
+  const data = loading ? undefined : serp.data;
+  const blocks = useMemo(() => layout(data), [data]);
+  const organic = useMemo(() => blocks.filter((b): b is Extract<Block, { kind: "organic" }> => b.kind === "organic"), [blocks]);
+  const byUrl = useMemo(() => new Map((metrics.data?.urls ?? []).map((row) => [row.url, row] as const)), [metrics.data]);
   const showMetrics = authority;
-  const maxVisits = Math.max(1, ...organic.map((r, i) => estimatedVisits(volume, r.position ?? i + 1) ?? 0));
-  const row = (url: string): UrlMetricsRow | undefined => byUrl.get(url);
-  const pending = loading || (serp.isPending && !last);
+  const visitsOf = (rank: number) => estimatedVisits(volume, rank);
+  const maxVisits = Math.max(1, ...organic.map((b) => visitsOf(b.rank) ?? 0));
+  const pending = loading || serp.loading;
+  const metricColumns = showMetrics ? 8 : 0;
 
-  if (last && organic.length === 0 && !serp.isPending) return <p className="text-[13px] text-muted">Google returned no organic results for this query.</p>;
+  if (data && organic.length === 0) return <p className="text-[13px] text-muted">Google returned no organic results for this query.</p>;
+
+  const num0 = (value: unknown, waiting: boolean, width = "w-8") => (waiting ? <Skeleton className={cx("ml-auto h-3", width)} /> : metric(value));
 
   return (
     <div className="space-y-3">
-      <ErrorNote error={serp.error ?? metrics.error} />
       <div className="relative overflow-x-auto rounded-lg border border-line" aria-busy={pending}>
-        <table className={cx("w-full border-collapse text-[13px]", showMetrics ? "min-w-[52rem]" : "min-w-[36rem]")}>
+        <table className={cx("w-full border-collapse text-[13px]", showMetrics ? "min-w-[64rem]" : "min-w-[36rem]")}>
           <caption className="sr-only">Top Google results for {keyword}</caption>
           <thead>
             <tr className="border-b border-line bg-sunken/50 text-left">
@@ -239,28 +276,37 @@ export function SerpOverview({
                 #
               </th>
               <th scope="col" className={head}>
-                Result
+                Search result
               </th>
               {showMetrics && (
                 <>
+                  <th scope="col" className={cx(head, "text-right")} title="Words on the page">
+                    Words
+                  </th>
                   <th scope="col" className={cx(head, "text-center")} title="Domain Rating of the site, 0 to 100">
                     DR
                   </th>
                   <th scope="col" className={cx(head, "text-right")} title="URL Rating of this page, 0 to 100">
                     UR
                   </th>
+                  <th scope="col" className={cx(head, "text-right")} title="Backlinks to this page">
+                    Backlinks
+                  </th>
                   <th scope="col" className={cx(head, "text-right")} title="Websites linking to this page">
-                    Ref. domains
+                    Domains
                   </th>
                   <th scope="col" className={cx(head, "text-right")} title="Estimated monthly organic visits to this page, from all its keywords">
                     Traffic
+                  </th>
+                  <th scope="col" className={cx(head, "text-right")} title="What that traffic would cost in Google Ads, per month">
+                    Value
                   </th>
                   <th scope="col" className={cx(head, "text-right")} title="Keywords this page ranks for">
                     Keywords
                   </th>
                 </>
               )}
-              <th scope="col" className={cx(head, "w-36 text-right")} title="Estimated monthly visits from this keyword: its volume times a typical click-through rate for the position">
+              <th scope="col" className={cx(head, "w-36 text-right")} title="Estimated monthly visits from this keyword: its volume times a typical click-through rate for the organic rank">
                 Est. visits
               </th>
               <th scope="col" className={cx(head, "w-20")}>
@@ -268,26 +314,44 @@ export function SerpOverview({
               </th>
             </tr>
           </thead>
-          <tbody className={cx(serp.isPending && last && "opacity-50")}>
-            {pending || !last ? (
-              <SkeletonRows columns={(showMetrics ? 5 : 0) + 2} />
+          <tbody className={cx(serp.refreshing && "opacity-50")}>
+            {pending || !data ? (
+              <SkeletonRows columns={metricColumns + 2} />
             ) : (
-              organic.map((result, index) => {
+              blocks.map((block, index) => {
+                if (block.kind === "feature") {
+                  const summary = featureSummary(block);
+                  return (
+                    <tr key={`f-${index}`} className="border-b border-line bg-sunken/30 last:border-b-0">
+                      <td className={cx(cell, "text-right font-mono text-xs text-muted tabular")}>{block.position ?? ""}</td>
+                      <td className={cell} colSpan={metricColumns + 3}>
+                        <span className="flex min-w-0 items-baseline gap-2">
+                          <span className="shrink-0 font-medium">› {featureLabel(block.type)}</span>
+                          {summary && <span className="min-w-0 truncate text-xs text-muted">{summary}</span>}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }
+                const { result, rank } = block;
                 const url = result.url as string;
                 const href = safeHref(url);
                 const host = (result.domain || hostOf(url) || "").replace(/^www\./, "");
-                const m = row(url);
-                const visits = estimatedVisits(volume, result.position ?? index + 1);
-                const waiting = showMetrics && !m;
+                const m = byUrl.get(url);
+                const visits = visitsOf(rank);
+                const waiting = showMetrics && !m && !metrics.error;
+                const value = m?.page?.trafficValue;
                 return (
-                  <tr key={`${result.position}-${url}-${index}`} className="border-b border-line last:border-b-0 hover:bg-sunken/40">
-                    <td className={cx(cell, "text-right font-mono text-xs text-muted tabular")}>{result.position ?? index + 1}</td>
+                  <tr key={`o-${rank}-${url}`} className="border-b border-line last:border-b-0 hover:bg-sunken/40">
+                    <td className={cx(cell, "text-right font-mono text-xs text-muted tabular")} title={`Organic result ${rank}`}>
+                      {result.position ?? rank}
+                    </td>
                     <td className={cx(cell, "max-w-[30rem]")}>
                       <span className="flex min-w-0 items-center gap-3">
                         <SiteMark host={host || "?"} />
                         <span className="min-w-0">
                           {href ? (
-                            <a href={href} target="_blank" rel="noreferrer noopener" className="block truncate font-medium text-ink underline-offset-2 hover:underline">
+                            <a href={href} target="_blank" rel="noreferrer noopener" className="block truncate font-medium text-accent-text underline-offset-2 hover:underline">
                               {result.title || url}
                             </a>
                           ) : (
@@ -295,7 +359,7 @@ export function SerpOverview({
                           )}
                           <span className="block truncate font-mono text-xs text-muted" title={url}>
                             {host ? (
-                              <Link href={toolLinks.domain(host, project)} className="text-accent-text hover:underline" title={`Domain overview of ${host}`}>
+                              <Link href={toolLinks.domain(host, market)} className="text-ink hover:underline" title={`Domain overview of ${host}`}>
                                 {host}
                               </Link>
                             ) : null}
@@ -307,11 +371,14 @@ export function SerpOverview({
                     </td>
                     {showMetrics && (
                       <>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.numberOfWordsOnPage || null, waiting)}</td>
                         <td className={cx(cell, "text-center")}>{waiting ? <Skeleton className="mx-auto size-7 rounded-full" /> : <RatingRing value={m?.domain?.domainRating} label="Domain Rating" />}</td>
-                        <td className={cx(cell, "text-right font-mono tabular")}>{waiting ? <Skeleton className="ml-auto h-3 w-6" /> : metric(m?.page?.urlRating)}</td>
-                        <td className={cx(cell, "text-right font-mono tabular")}>{waiting ? <Skeleton className="ml-auto h-3 w-8" /> : metric(m?.page?.refDomains)}</td>
-                        <td className={cx(cell, "text-right font-mono tabular")}>{waiting ? <Skeleton className="ml-auto h-3 w-10" /> : metric(m?.page?.traffic)}</td>
-                        <td className={cx(cell, "text-right font-mono tabular")}>{waiting ? <Skeleton className="ml-auto h-3 w-8" /> : metric(m?.page?.organicKeywords)}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.urlRating, waiting, "w-6")}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.backlinks, waiting)}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.refDomains, waiting)}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.traffic, waiting, "w-10")}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{waiting ? <Skeleton className="ml-auto h-3 w-10" /> : finite(value) ? `$${compact(value)}` : "—"}</td>
+                        <td className={cx(cell, "text-right font-mono tabular")}>{num0(m?.page?.organicKeywords, waiting)}</td>
                       </>
                     )}
                     <td className={cell}>
@@ -324,7 +391,7 @@ export function SerpOverview({
                     </td>
                     <td className={cell}>
                       <span className="flex justify-end gap-0.5">
-                        <ActionLink href={toolLinks.page(url)} label={`Analyse page ${url}`} icon={FileSearch} />
+                        <ActionLink href={toolLinks.page(url, market)} label={`Analyse page ${url}`} icon={FileSearch} />
                         <ActionLink href={toolLinks.backlinks(url)} label={`Backlinks to ${url}`} icon={Link2} />
                       </span>
                     </td>
@@ -335,23 +402,30 @@ export function SerpOverview({
           </tbody>
         </table>
       </div>
-      {last && organic.length > 0 && (
+      {data && organic.length > 0 && (
         <div className="flex justify-end">
           <ExportButton
             filename={`serp-${slug(keyword)}-${csvDate()}.csv`}
             rows={() =>
-              organic.map((r) => ({
-                position: r.position ?? "",
-                title: r.title ?? "",
-                url: r.url ?? "",
-                domain: r.domain ?? "",
-                est_visits: estimatedVisits(volume, r.position) ?? "",
-                domain_rating: row(r.url as string)?.domain?.domainRating ?? "",
-                url_rating: row(r.url as string)?.page?.urlRating ?? "",
-                referring_domains: row(r.url as string)?.page?.refDomains ?? "",
-                page_traffic: row(r.url as string)?.page?.traffic ?? "",
-                page_keywords: row(r.url as string)?.page?.organicKeywords ?? "",
-              }))
+              organic.map(({ result: r, rank }) => {
+                const m = byUrl.get(r.url as string);
+                return {
+                  position: r.position ?? "",
+                  organic_rank: rank,
+                  title: r.title ?? "",
+                  url: r.url ?? "",
+                  domain: r.domain ?? "",
+                  est_visits: visitsOf(rank) ?? "",
+                  words: m?.page?.numberOfWordsOnPage ?? "",
+                  domain_rating: m?.domain?.domainRating ?? "",
+                  url_rating: m?.page?.urlRating ?? "",
+                  backlinks: m?.page?.backlinks ?? "",
+                  referring_domains: m?.page?.refDomains ?? "",
+                  page_traffic: m?.page?.traffic ?? "",
+                  traffic_value: m?.page?.trafficValue ?? "",
+                  page_keywords: m?.page?.organicKeywords ?? "",
+                };
+              })
             }
           />
         </div>

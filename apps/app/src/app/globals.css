@@ -24,31 +24,58 @@
   --radius-md: 4px;
   --radius-lg: 8px;
 
-  --shadow-hard-sm: 2px 2px 0 0 var(--color-ink);
-  --shadow-hard: 4px 4px 0 0 var(--color-ink);
+  --color-shadow: #111210;
+
+  --shadow-hard-sm: 2px 2px 0 0 var(--color-shadow);
+  --shadow-hard: 4px 4px 0 0 var(--color-shadow);
 }
 
 @layer base {
+  /*
+   * Theme: <html data-theme="light|dark"> when the user picked one (see theme.tsx), otherwise the
+   * system setting. The dark palette is written twice because CSS cannot share a block between a
+   * media query and an attribute selector.
+   */
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
   @media (prefers-color-scheme: dark) {
-    :root {
-      --color-bg: #0e0f0c;
-      --color-surface: #161714;
-      --color-sunken: #1e201c;
-      --color-ink: #f2f2ea;
-      --color-muted: #a3a59b;
-      --color-faint: #73756c;
-      --color-line: #2b2d28;
-      --color-accent: #2563eb;
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --color-bg: #0d0f13;
+      --color-surface: #151820;
+      --color-sunken: #1d212b;
+      --color-ink: #eceef3;
+      --color-muted: #a1a7b4;
+      --color-faint: #6f7685;
+      --color-line: #2a2f3b;
+      --color-accent: #3b7bf6;
       --color-accent-fg: #ffffff;
-      --color-accent-text: #8ab4ff;
+      --color-accent-text: #8cb4ff;
       --color-pos: #4ade94;
       --color-neg: #ff7a66;
       --color-warn: #f5b041;
+      --color-shadow: #000000;
     }
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-bg: #0d0f13;
+    --color-surface: #151820;
+    --color-sunken: #1d212b;
+    --color-ink: #eceef3;
+    --color-muted: #a1a7b4;
+    --color-faint: #6f7685;
+    --color-line: #2a2f3b;
+    --color-accent: #3b7bf6;
+    --color-accent-fg: #ffffff;
+    --color-accent-text: #8cb4ff;
+    --color-pos: #4ade94;
+    --color-neg: #ff7a66;
+    --color-warn: #f5b041;
+    --color-shadow: #000000;
   }
 
   body {

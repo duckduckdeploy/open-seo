@@ -19,11 +19,19 @@ export function LocationPicker({
   value,
   onChange,
   countriesOnly,
+  country,
+  placeholder,
+  className,
   "aria-label": ariaLabel,
 }: {
-  value: LocationChoice;
+  /** Null shows the placeholder (nothing chosen). */
+  value: LocationChoice | null;
   onChange: (value: LocationChoice) => void;
   countriesOnly?: boolean;
+  /** Searches only inside this country (ISO code), and lists its cities and regions, not itself. */
+  country?: string;
+  placeholder?: string;
+  className?: string;
   "aria-label"?: string;
 }) {
   const id = useId();
@@ -40,12 +48,12 @@ export function LocationPicker({
   }, [text]);
 
   const results = useQuery({
-    queryKey: ["locations", term],
-    queryFn: () => api<LocationRow[]>("/locations", { query: { q: term } }),
+    queryKey: ["locations", term, country ?? ""],
+    queryFn: () => api<LocationRow[]>("/locations", { query: { q: term, country: country?.toUpperCase() } }),
     enabled: open && term.length >= 2,
     staleTime: Infinity,
   });
-  const rows = (results.data ?? []).filter((row) => !countriesOnly || row.type === "Country");
+  const rows = (results.data ?? []).filter((row) => (countriesOnly ? row.type === "Country" : !country || row.type !== "Country"));
   const showList = open && term.length >= 2;
   const current = Math.min(active, Math.max(0, rows.length - 1));
 
@@ -75,8 +83,9 @@ export function LocationPicker({
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={showList && rows[current] ? `${id}-option-${rows[current].code}` : undefined}
-        value={open ? text : value.name.replaceAll(",", ", ")}
-        placeholder={countriesOnly ? "Search countries" : "Search a country, region or city"}
+        value={open ? text : (value?.name.replaceAll(",", ", ") ?? "")}
+        placeholder={placeholder ?? (countriesOnly ? "Search countries" : "Search a country, region or city")}
+        className={className}
         onFocus={() => setOpen(true)}
         onChange={(event) => {
           setOpen(true);
@@ -118,7 +127,7 @@ export function LocationPicker({
               className={cx(
                 "flex cursor-pointer items-baseline justify-between gap-3 px-3 py-1.5 text-[13px]",
                 index === current && "bg-sunken",
-                row.code === value.code && "font-medium",
+                row.code === value?.code && "font-medium",
               )}
             >
               <span className="truncate">{row.name.replaceAll(",", ", ")}</span>

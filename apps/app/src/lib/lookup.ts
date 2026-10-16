@@ -1,6 +1,6 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import { lookupTarget } from "./scope";
@@ -35,6 +35,45 @@ export function useLookup<T, I extends object = Record<string, unknown>>(project
 }
 
 /**
+ * A lookup driven by what is on screen: it runs whenever `input` is set and changes, and not while
+ * it is null. The research tools derive every input from their URL, so a link, a reload or the
+ * back button shows the same view; the server serves a repeat from its cache for free, and this
+ * browser keeps results it has already seen. `refresh` pays for fresh data.
+ */
+export function useLookupQuery<T, I extends object = Record<string, unknown>>(scopeId: string, name: string, input: I | null) {
+  const queryClient = useQueryClient();
+  const key = ["lookup", scopeId, name, input ? JSON.stringify(input) : null];
+  const call = (body: I, refresh?: boolean) => {
+    const { path, query } = lookupTarget(scopeId, name);
+    return api<LookupResult<T>>(path, { method: "POST", body, query: { ...query, refresh: refresh ? 1 : undefined } });
+  };
+  const query = useQuery({
+    queryKey: key,
+    queryFn: () => call(input as I),
+    enabled: input !== null,
+    staleTime: Infinity,
+    gcTime: 60 * 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const refresh = useMutation({
+    mutationFn: () => call(input as I, true),
+    onSuccess: (result) => queryClient.setQueryData(key, result),
+  });
+  return {
+    result: query.data,
+    data: query.data?.data,
+    /** Running for an input with nothing to show yet. */
+    loading: input !== null && query.isPending,
+    error: query.error ?? refresh.error,
+    refresh: () => (input ? refresh.mutateAsync().catch(() => undefined) : Promise.resolve(undefined)),
+    refreshing: refresh.isPending,
+  };
+}
+
+export type LookupQuery<T> = ReturnType<typeof useLookupQuery<T>>;
+
+/**
  * Price of a lookup for the given input, without running it. Free; debounced while the user types.
  * `stale` is true while the price on screen belongs to an earlier input (debounce pending or the
  * new price still loading): show "Checking price…" and keep the Run button disabled until it clears.
@@ -59,6 +98,47 @@ export function useEstimate<I extends object>(projectId: string, name: string, i
   });
   const stale = serialised !== null && (settled !== serialised || query.isPlaceholderData || query.isFetching);
   return { ...query, stale };
+}
+
+/**
+ * The price of a whole view (several lookups) for what is typed, before it runs: the sum of each
+ * lookup's estimate, plus `extra` for parts priced on the client. Same contract as useEstimate.
+ */
+export function useViewPrice(scopeId: string, parts: [name: string, input: object | null][], extra: Estimate[] = []) {
+  const active = parts.filter((part): part is [string, object] => part[1] !== null);
+  const serialised = active.length ? JSON.stringify(active) : null;
+  const [settled, setSettled] = useState(serialised);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(serialised), 300);
+    return () => clearTimeout(id);
+  }, [serialised]);
+  const settledParts: [string, object][] = settled ? JSON.parse(settled) : [];
+  const results = useQueries({
+    queries: settledParts.map(([name, input]) => ({
+      queryKey: ["estimate", scopeId, name, JSON.stringify(input)],
+      queryFn: () => {
+        const { path, query } = lookupTarget(scopeId, name);
+        return api<{ estimate: Estimate }>(path, { method: "POST", body: input, query: { ...query, dryRun: 1 } }).then((r) => r.estimate);
+      },
+      staleTime: Infinity,
+      retry: false,
+    })),
+  });
+  const all = [...results.map((r) => r.data), ...extra];
+  const ready = settledParts.length > 0 && all.every(Boolean);
+  const round = (value: number) => Math.round(value * 1e4) / 1e4;
+  const data: Estimate | undefined = ready
+    ? {
+        min: round((all as Estimate[]).reduce((t, e) => t + e.min, 0)),
+        max: (all as Estimate[]).some((e) => e.max == null) ? null : round((all as Estimate[]).reduce((t, e) => t + (e.max as number), 0)),
+      }
+    : undefined;
+  return {
+    data,
+    error: results.find((r) => r.error)?.error ?? null,
+    isPending: !ready,
+    stale: serialised !== null && (settled !== serialised || results.some((r) => r.isFetching)),
+  };
 }
 
 export function downloadCsv(filename: string, rows: Record<string, unknown>[]) {

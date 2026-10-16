@@ -1,6 +1,6 @@
 import { compact } from "@/lib/api";
 import type { TrendPoint } from "./types";
-import { finite, monthLabel } from "./util";
+import { chronological, monthLabel } from "./util";
 
 const W = 76;
 const H = 22;
@@ -8,7 +8,8 @@ const PAD = 2;
 
 /** 12-month search volume trend. Plain SVG: hundreds of these render in one table. */
 export function Sparkline({ trend }: { trend: TrendPoint[] | null | undefined }) {
-  const points = (trend ?? []).filter((point) => point && finite(point.volume));
+  // The last 12 months, oldest first.
+  const points = chronological(trend).slice(-12);
   if (points.length < 2) return <span className="text-faint">—</span>;
 
   const values = points.map((point) => point.volume);
