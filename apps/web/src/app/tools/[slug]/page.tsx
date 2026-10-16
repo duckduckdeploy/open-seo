@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowRight, Check } from 'lucide-react';
+import { BrandRow, brandName } from '@/components/brand-icon';
 import { ButtonLink } from '@/components/button';
 import { CtaBand } from '@/components/cta-band';
 import { FaqList } from '@/components/faq';
@@ -94,6 +95,9 @@ export default async function ToolPage({ params }: ToolPageProps) {
               </span>
               <h1 className="text-display mt-7 text-balance">{tool.headline}</h1>
               <p className="mt-7 text-xl leading-relaxed text-pretty text-muted md:text-[1.375rem]">{tool.lede}</p>
+              {tool.worksWith ? (
+                <BrandRow className="mt-8" items={tool.worksWith.map((brand) => ({ brand, name: brandName(brand) }))} />
+              ) : null}
               <ul className="mt-8 flex flex-wrap justify-center gap-x-7 gap-y-3 text-[0.9375rem]">
                 {tool.points.map((point) => (
                   <li key={point} className="inline-flex items-center gap-2">

@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Globe, Languages, type LucideIcon, MapPin, Search } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { LocationPicker } from "@/components/location-picker";
-import { Button, cx, Input, Select } from "@/components/ui";
+import { Button, cx, Input, Select, WithIcon } from "@/components/ui";
 import { api } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
 import type { Project } from "@/lib/hooks";
@@ -93,30 +93,33 @@ const field = "h-11 text-[14px]";
 export function MarketFields({ market, onChange, areas }: { market: Market; onChange: (market: Market) => void; areas?: boolean }) {
   return (
     <>
-      <Select
-        value={market.country}
-        onChange={(event) => {
-          const next = marketFor(event.target.value);
-          if (next) onChange(next);
-        }}
-        aria-label="Country"
-        className={cx(field, "w-[calc(50%-0.25rem)] sm:w-44")}
-      >
-        {COUNTRIES.map(([iso, , name]) => (
-          <option key={iso} value={iso}>
-            {name}
-          </option>
-        ))}
-      </Select>
+      <WithIcon icon={Globe} className="w-[calc(50%-0.25rem)] sm:w-44">
+        <Select
+          value={market.country}
+          onChange={(event) => {
+            const next = marketFor(event.target.value);
+            if (next) onChange(next);
+          }}
+          aria-label="Country"
+          className={cx(field, "pl-9")}
+        >
+          {COUNTRIES.map(([iso, , name]) => (
+            <option key={iso} value={iso}>
+              {name}
+            </option>
+          ))}
+        </Select>
+      </WithIcon>
       {areas && (
         <div className="relative w-[calc(50%-0.25rem)] sm:w-52">
+          <MapPin className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted" aria-hidden strokeWidth={1.75} />
           <LocationPicker
             country={market.country}
             value={market.area ? { code: market.area.code, name: market.area.name ?? "Loading…" } : null}
             onChange={(choice) => onChange({ ...market, area: { code: choice.code, name: choice.name } })}
             placeholder="All of the country"
             aria-label="City, state or region (optional)"
-            className={cx(field, market.area && "pr-8")}
+            className={cx(field, "pl-9", market.area && "pr-8")}
           />
           {market.area && (
             <button
@@ -131,14 +134,16 @@ export function MarketFields({ market, onChange, areas }: { market: Market; onCh
           )}
         </div>
       )}
-      <Select value={market.language} onChange={(event) => onChange({ ...market, language: event.target.value })} aria-label="Language" className={cx(field, "w-[calc(50%-0.25rem)] sm:w-32")}>
-        {!LANGUAGES.some(([code]) => code === market.language) && <option value={market.language}>{market.language}</option>}
-        {LANGUAGES.map(([code, name]) => (
-          <option key={code} value={code}>
-            {name}
-          </option>
-        ))}
-      </Select>
+      <WithIcon icon={Languages} className="w-[calc(50%-0.25rem)] sm:w-36">
+        <Select value={market.language} onChange={(event) => onChange({ ...market, language: event.target.value })} aria-label="Language" className={cx(field, "pl-9")}>
+          {!LANGUAGES.some(([code]) => code === market.language) && <option value={market.language}>{market.language}</option>}
+          {LANGUAGES.map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </Select>
+      </WithIcon>
     </>
   );
 }
@@ -151,6 +156,7 @@ export function SearchBar({
   value,
   onSearch,
   label,
+  icon: Icon = Search,
   placeholder,
   maxLength = 200,
   market,
@@ -166,6 +172,8 @@ export function SearchBar({
   value: string;
   onSearch: (text: string) => void;
   label: string;
+  /** The icon at the start of the field: what kind of thing to enter. */
+  icon?: LucideIcon;
   placeholder: string;
   maxLength?: number;
   /** Omit for tools without a market (backlinks are worldwide). */
@@ -193,7 +201,7 @@ export function SearchBar({
     >
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
         <div className="relative w-full min-w-0 lg:flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
+          <Icon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden strokeWidth={1.75} />
           <Input
             value={text}
             onChange={(event) => setText(event.target.value)}

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { NAV_LINKS } from '@/lib/site';
+import { BrandIcon } from './brand-icon';
 import { isActivePath } from './nav-links';
 
 interface MobileNavProps {
@@ -87,7 +88,10 @@ export function MobileNav({ signInUrl, signUpUrl, githubUrl }: MobileNavProps) {
             {githubUrl ? (
               <li>
                 <a href={githubUrl} className={itemClass}>
-                  GitHub
+                  <span className="inline-flex items-center gap-2.5">
+                    <BrandIcon brand="github" />
+                    GitHub
+                  </span>
                 </a>
               </li>
             ) : null}

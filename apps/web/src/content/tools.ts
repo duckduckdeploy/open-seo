@@ -1,4 +1,5 @@
 import { Bot, FileSearch, Globe, Grid3x3, Lightbulb, Link2, ListOrdered, Search, Swords, type LucideIcon } from 'lucide-react';
+import { ASSISTANT_BRANDS, type Brand } from '@/components/brand-icon';
 import type { ScreenName } from '@/components/screenshot';
 import type { Faq } from './pricing';
 
@@ -37,6 +38,8 @@ export interface ResearchTool {
   /** The tool's address in the app. */
   appPath: string;
   hero: { shot: ScreenName; alt: string };
+  /** Logos of the services or assistants it works with, shown under the headline. */
+  worksWith?: Brand[];
   parts: ToolPart[];
   uses: ToolUse[];
   /** What one search runs and costs, and the total. */
@@ -434,6 +437,7 @@ export const tools: ResearchTool[] = [
   },
   {
     slug: 'ai-visibility-checker',
+    worksWith: ASSISTANT_BRANDS,
     name: 'AI visibility checker',
     icon: Bot,
     headline: 'See which sites AI assistants cite, and in what order',

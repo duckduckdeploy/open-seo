@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { BrandRow, brandName } from '@/components/brand-icon';
 import { ButtonLink } from '@/components/button';
 import { CtaBand } from '@/components/cta-band';
 import { PriceTable, rowsFromFeatureCosts } from '@/components/price-table';
@@ -69,6 +70,9 @@ export default async function FeaturePage({ params }: FeaturePageProps) {
               </span>
               <h1 className="text-display mt-7 text-balance">{feature.headline}</h1>
               <p className="mt-7 text-xl leading-relaxed text-pretty text-muted md:text-[1.375rem]">{feature.summary}</p>
+              {feature.worksWith ? (
+                <BrandRow className="mt-8" items={feature.worksWith.map((brand) => ({ brand, name: brandName(brand) }))} />
+              ) : null}
               <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
                 <ButtonLink href={SIGN_UP_URL} size="lg">
                   Get started

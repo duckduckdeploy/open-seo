@@ -1,5 +1,6 @@
 "use client";
 
+import { Sprout } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { type Column, DataTable } from "@/components/research/data-table";
@@ -137,7 +138,7 @@ export function KeywordResearch({ project }: { project: Project }) {
 
   return (
     <>
-      <SearchBar value={keyword} onSearch={(q) => nav({ q })} label="Seed keyword" placeholder="Enter a seed keyword, e.g. plumbing software" market={market} onMarket={changeMarket} areas pending={loading} button="Find ideas">
+      <SearchBar value={keyword} onSearch={(q) => nav({ q })} label="Seed keyword" icon={Sprout} placeholder="Enter a seed keyword, e.g. plumbing software" market={market} onMarket={changeMarket} areas pending={loading} button="Find ideas">
         {(draft) => (
           <>
             <span className="text-xs text-muted">Ideas are national; with a city or state the top {LOCAL} also get their local volume.</span>

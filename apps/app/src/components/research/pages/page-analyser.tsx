@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Globe, Link2 } from "lucide-react";
+import { ArrowRight, FileText, Globe, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -125,7 +125,7 @@ export function PageAnalyser({ project }: { project: Project }) {
       <SearchBar
         value={params.get("url") ?? ""}
         onSearch={(text) => nav({ url: toUrl(text) ?? text })}
-        label="Page URL"
+        label="Page URL" icon={FileText}
         placeholder="https://example.com/blog/post"
         maxLength={2000}
         market={market}

@@ -14,6 +14,7 @@ import { AUDIT_CHECKS } from '@/content/features';
 import { priceRows } from '@/content/pricing';
 import { selfHostDocker } from '@/content/snippets';
 import { AgentFold } from '@/components/agent-fold';
+import { BrandIcon } from '@/components/brand-icon';
 import { pageMeta } from '@/lib/metadata';
 import { GITHUB_URL, SIGN_UP_URL, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL, YEPAPI_URL } from '@/lib/site';
 
@@ -198,6 +199,11 @@ export default function HomePage() {
             title="Run the whole thing yourself"
             lede="Everything this site runs is in the repository. Start it on your own machine or server with Docker, and it is yours."
           />
+          <p className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted">
+            <span className="inline-flex items-center gap-2"><BrandIcon brand="docker" className="size-5" />Docker</span>
+            <span className="inline-flex items-center gap-2"><BrandIcon brand="postgresql" className="size-5" />PostgreSQL</span>
+            <span className="inline-flex items-center gap-2"><BrandIcon brand="github" className="size-5" />Open source</span>
+          </p>
           <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-x-8 gap-y-4">
             {selfHostPoints.map((point) => (
               <li key={point} className="flex items-start gap-3 text-muted">
@@ -219,6 +225,7 @@ export default function HomePage() {
             </Link>
             {GITHUB_URL ? (
               <a href={GITHUB_URL} rel="noopener" className={textLink}>
+                <BrandIcon brand="github" />
                 Source on GitHub
               </a>
             ) : null}

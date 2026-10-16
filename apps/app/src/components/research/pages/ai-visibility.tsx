@@ -1,7 +1,7 @@
 "use client";
 
 import { CURATED_MODELS } from "@openseo/shared";
-import { ExternalLink } from "lucide-react";
+import { AtSign, ExternalLink, MessageSquareText } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Fragment, type ReactNode, useMemo, useState } from "react";
 import { type Column, DataTable } from "@/components/research/data-table";
@@ -9,7 +9,7 @@ import { ExportButton, RunPrompt, ViewErrors, ViewMeta } from "@/components/rese
 import { SearchBar, useToolNav, useUrlText } from "@/components/research/search-bar";
 import { Skeleton } from "@/components/research/serp-overview";
 import { csvDate, slug } from "@/components/research/util";
-import { Badge, Card, cx, Input, PageHeader } from "@/components/ui";
+import { Badge, Card, cx, Input, PageHeader, WithIcon } from "@/components/ui";
 import { num } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
 import { type LookupQuery, useLookupQuery } from "@/lib/lookup";
@@ -196,23 +196,25 @@ export function AiVisibility({ project }: { project: Project }) {
       <SearchBar
         value={prompt}
         onSearch={(q) => nav({ q })}
-        label="Question"
+        label="Question" icon={MessageSquareText}
         placeholder="Ask what your customers ask, e.g. best standing desk for a home office"
         maxLength={2000}
         pending={lookup.loading}
         button="Ask"
         extra={
-          <Input
-            value={siteText}
-            onChange={(event) => setSiteText(event.target.value)}
-            onBlur={() => siteText.trim() !== site && nav({ site: siteText.trim() || null }, { replace: true })}
-            onKeyDown={(event) => event.key === "Enter" && nav({ site: siteText.trim() || null }, { replace: true })}
-            placeholder="Your site, brand (optional)"
-            aria-label="Your site and brand names, comma separated, to find them in the answers"
-            autoCapitalize="none"
-            spellCheck={false}
-            className="h-11 w-full sm:w-56"
-          />
+          <WithIcon icon={AtSign} className="w-full sm:w-56">
+            <Input
+              value={siteText}
+              onChange={(event) => setSiteText(event.target.value)}
+              onBlur={() => siteText.trim() !== site && nav({ site: siteText.trim() || null }, { replace: true })}
+              onKeyDown={(event) => event.key === "Enter" && nav({ site: siteText.trim() || null }, { replace: true })}
+              placeholder="Your site, brand (optional)"
+              aria-label="Your site and brand names, comma separated, to find them in the answers"
+              autoCapitalize="none"
+              spellCheck={false}
+              className="h-11 pl-9"
+            />
+          </WithIcon>
         }
       >
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Assistants to ask">

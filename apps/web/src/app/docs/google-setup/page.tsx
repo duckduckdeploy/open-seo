@@ -15,7 +15,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-...`;
 
 export default function GoogleSetupPage() {
   return (
-    <DocArticle slug={slug}>
+    <DocArticle slug={slug} brands={['googlesearchconsole', 'googleanalytics']}>
       <p>
         Users connect Search Console and Google Analytics through an OAuth client that belongs to whoever runs the
         OpenSEO install. Without one, the Search performance page explains that Google is not set up, and nothing else

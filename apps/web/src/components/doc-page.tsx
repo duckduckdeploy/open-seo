@@ -2,14 +2,17 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { docPages, getDoc } from '@/content/docs';
+import { BrandRow, brandName, type Brand } from './brand-icon';
 
 interface DocArticleProps {
   slug: string;
   children: ReactNode;
+  /** Logos of the services or assistants the page is about, shown under the intro. */
+  brands?: Brand[];
 }
 
 /** Shared shell for a docs page: section, title, intro, prose body and previous / next links. */
-export function DocArticle({ slug, children }: DocArticleProps) {
+export function DocArticle({ slug, children, brands }: DocArticleProps) {
   const doc = getDoc(slug);
   const index = docPages.indexOf(doc);
   const previous = docPages[index - 1];
@@ -28,6 +31,7 @@ export function DocArticle({ slug, children }: DocArticleProps) {
       </p>
       <h1 className="text-title mt-5 max-w-3xl text-balance">{doc.title}</h1>
       <p className="text-lede mt-5 max-w-2xl text-pretty">{doc.description}</p>
+      {brands ? <BrandRow className="mt-6 justify-start" items={brands.map((brand) => ({ brand, name: brandName(brand) }))} /> : null}
 
       <div className="prose-doc mt-12 border-t border-line pt-10">{children}</div>
 

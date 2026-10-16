@@ -11,7 +11,7 @@ export const metadata = pageMeta({ title: doc.title, description: doc.descriptio
 
 export default function SearchConsoleTutorial() {
   return (
-    <DocArticle slug={slug}>
+    <DocArticle slug={slug} brands={['googlesearchconsole', 'googleanalytics']}>
       <p>
         Search Console is the one source of search data that comes from Google itself: the queries people typed, how
         often you appeared, where, and how often they clicked. Google Analytics adds what those visitors did on your

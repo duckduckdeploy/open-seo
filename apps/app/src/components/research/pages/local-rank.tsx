@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Star } from "lucide-react";
+import { ExternalLink, Grid3x3, MapPinned, MoveHorizontal, Star } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { type Column, DataTable } from "@/components/research/data-table";
@@ -9,7 +9,7 @@ import { SearchBar, useChangeMarket, useMarket, useToolNav } from "@/components/
 import { Skeleton } from "@/components/research/serp-overview";
 import { GridMap } from "@/components/research/grid-map";
 import { csvDate, finite, oneOf, slug } from "@/components/research/util";
-import { Card, cx, PageHeader, Select } from "@/components/ui";
+import { Card, cx, PageHeader, Select, WithIcon } from "@/components/ui";
 import { num } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
 import { type LookupQuery, useLookupQuery, useViewPrice } from "@/lib/lookup";
@@ -122,7 +122,7 @@ export function LocalRank({ project }: { project: Project }) {
       <SearchBar
         value={keyword}
         onSearch={(q) => nav({ q, biz: null })}
-        label="Keyword"
+        label="Keyword" icon={MapPinned}
         placeholder="What people search on Maps, e.g. dentist"
         market={market}
         onMarket={changeMarket}
@@ -131,20 +131,24 @@ export function LocalRank({ project }: { project: Project }) {
         button="Check rankings"
         extra={
           <>
-            <Select value={size} onChange={(event) => nav({ size: event.target.value === "5" ? null : event.target.value, biz: null })} aria-label="Grid size" className="h-11 w-[calc(50%-0.25rem)] sm:w-28">
-              {SIZES.map((value) => (
-                <option key={value} value={value}>
-                  {value} × {value}
-                </option>
-              ))}
-            </Select>
-            <Select value={spacing} onChange={(event) => nav({ spacing: event.target.value === "1000" ? null : event.target.value, biz: null })} aria-label="Distance between points" className="h-11 w-[calc(50%-0.25rem)] sm:w-36">
-              {SPACINGS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
+            <WithIcon icon={Grid3x3} className="w-[calc(50%-0.25rem)] sm:w-32">
+              <Select value={size} onChange={(event) => nav({ size: event.target.value === "5" ? null : event.target.value, biz: null })} aria-label="Grid size" className="h-11 pl-9">
+                {SIZES.map((value) => (
+                  <option key={value} value={value}>
+                    {value} × {value}
+                  </option>
+                ))}
+              </Select>
+            </WithIcon>
+            <WithIcon icon={MoveHorizontal} className="w-[calc(50%-0.25rem)] sm:w-40">
+              <Select value={spacing} onChange={(event) => nav({ spacing: event.target.value === "1000" ? null : event.target.value, biz: null })} aria-label="Distance between points" className="h-11 pl-9">
+                {SPACINGS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </WithIcon>
           </>
         }
       >

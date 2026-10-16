@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { usd } from "@/lib/api";
 
@@ -46,6 +46,19 @@ export function Select({ className, children, ...rest }: SelectHTMLAttributes<HT
     <select {...rest} className={cx(field, "pr-8", className)}>
       {children}
     </select>
+  );
+}
+
+/**
+ * A field with a small icon at its start. The box takes the field's width; give the field "pl-9"
+ * so its text clears the icon.
+ */
+export function WithIcon({ icon: Icon, className, children }: { icon: LucideIcon; className?: string; children: ReactNode }) {
+  return (
+    <div className={cx("relative", className)}>
+      <Icon className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted" aria-hidden strokeWidth={1.75} />
+      {children}
+    </div>
   );
 }
 

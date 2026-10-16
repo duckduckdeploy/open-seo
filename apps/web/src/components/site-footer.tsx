@@ -4,6 +4,7 @@ import { docPages, docsIn } from '@/content/docs';
 import { features } from '@/content/features';
 import { tools } from '@/content/tools';
 import { GITHUB_URL, SIGN_IN_URL, SIGN_UP_URL } from '@/lib/site';
+import { BrandIcon } from './brand-icon';
 import { Logo } from './logo';
 
 const linkClass = 'text-[0.9375rem] text-muted transition-colors duration-150 hover:text-ink';
@@ -95,7 +96,8 @@ export function SiteFooter() {
             </li>
             {GITHUB_URL ? (
               <li>
-                <a href={GITHUB_URL} className={linkClass} rel="noopener">
+                <a href={GITHUB_URL} className={`${linkClass} inline-flex items-center gap-2`} rel="noopener">
+                  <BrandIcon brand="github" />
                   GitHub
                 </a>
               </li>

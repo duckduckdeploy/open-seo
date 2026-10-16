@@ -2,13 +2,14 @@
 
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { Monitor, Smartphone } from "lucide-react";
 import { Price, RunPrompt, ViewErrors, ViewMeta } from "@/components/research/lookup-ui";
 import { DifficultyPill, IntentBadge } from "@/components/research/pills";
 import { SearchBar, useChangeMarket, useMarket, useToolNav } from "@/components/research/search-bar";
 import { authorityInput, type Device, featureLabel, SerpOverview, serpInput, Skeleton, Switch, useAuthoritySetting } from "@/components/research/serp-overview";
 import { KeywordLink } from "@/components/research/tool-link";
 import type { KeywordMetrics, SerpData, SerpInput, UrlMetricsData, UrlMetricsInput } from "@/components/research/types";
-import { Badge, Card, PageHeader, Select } from "@/components/ui";
+import { Badge, Card, PageHeader, Select, WithIcon } from "@/components/ui";
 import { compact } from "@/lib/api";
 import type { Project } from "@/lib/hooks";
 import { type LookupQuery, useLookupQuery, useViewPrice } from "@/lib/lookup";
@@ -65,10 +66,12 @@ export function SerpChecker({ project }: { project: Project }) {
         pending={serp.loading}
         button="Check SERP"
         extra={
-          <Select value={device} onChange={(event) => nav({ device: event.target.value === "mobile" ? "mobile" : null })} aria-label="Device" className="h-11 w-[calc(50%-0.25rem)] sm:w-32">
-            <option value="desktop">Desktop</option>
-            <option value="mobile">Mobile</option>
-          </Select>
+          <WithIcon icon={device === "mobile" ? Smartphone : Monitor} className="w-[calc(50%-0.25rem)] sm:w-36">
+            <Select value={device} onChange={(event) => nav({ device: event.target.value === "mobile" ? "mobile" : null })} aria-label="Device" className="h-11 pl-9">
+              <option value="desktop">Desktop</option>
+              <option value="mobile">Mobile</option>
+            </Select>
+          </WithIcon>
         }
       >
         {(draft) => (

@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ISSUE_TYPES } from '@openseo/crawler/catalog';
+import { ASSISTANT_BRANDS, type Brand } from '@/components/brand-icon';
 
 /** Number of checks the site audit crawler runs, read from its catalog so the copy cannot drift. */
 export const AUDIT_CHECKS = ISSUE_TYPES.length;
@@ -48,6 +49,8 @@ export interface Feature {
   /** "What each action costs". */
   costs: FeatureCost[];
   costNote?: string;
+  /** Logos of the services or assistants it works with, shown under the headline. */
+  worksWith?: Brand[];
 }
 
 export const UNLISTED_PRICE_LABEL = 'Shown in the app before it runs';
@@ -107,6 +110,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'search-performance',
+    worksWith: ['googlesearchconsole', 'googleanalytics'],
     name: 'Search performance',
     headline: 'Your own Google data, turned into a to-do list',
     summary:
@@ -186,6 +190,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'ai-visibility',
+    worksWith: ASSISTANT_BRANDS,
     name: 'AI visibility',
     headline: 'Find out what AI models say about your brand',
     summary:
@@ -260,6 +265,7 @@ export const features: Feature[] = [
   },
   {
     slug: 'mcp-and-api',
+    worksWith: ['mcp', 'claude', 'chatgpt', 'claudecode', 'cursor', 'codex', 'geminicli'],
     name: 'MCP server and REST API',
     headline: 'SEO your AI agent can do, with a spending cap',
     summary:

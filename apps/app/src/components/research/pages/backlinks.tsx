@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSearch, Globe } from "lucide-react";
+import { FileSearch, Globe, Link2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
@@ -422,7 +422,7 @@ export function Backlinks({ project }: { project: Project }) {
       <SearchBar
         value={params.get("target") ?? project.domain ?? ""}
         onSearch={(text) => nav({ target: cleanTarget(text), tab: null, vs: null })}
-        label="Domain or URL"
+        label="Domain or URL" icon={Link2}
         placeholder="A domain, or a full URL for one page"
         maxLength={2000}
         pending={summary.loading}

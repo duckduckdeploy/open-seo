@@ -61,7 +61,7 @@ pnpm dev`;
 
 export default function SelfHostingPage() {
   return (
-    <DocArticle slug={slug}>
+    <DocArticle slug={slug} brands={['docker', 'postgresql', 'github']}>
       <p>
         OpenSEO is open source under the MIT licence, and everything this site runs is in the repository: the
         dashboard, the API with its MCP server and background worker, the public site and the database schema. With

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Globe } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
@@ -72,7 +72,7 @@ export function Competitors({ project }: { project: Project }) {
       <SearchBar
         value={domainText}
         onSearch={(text) => nav({ domain: cleanDomain(text), tab: null }, { reset: true })}
-        label="Your domain"
+        label="Your domain" icon={Globe}
         placeholder="Your domain, e.g. example.com"
         maxLength={253}
         market={market}

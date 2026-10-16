@@ -1,3 +1,4 @@
+import { ASSISTANT_BRANDS } from '@/components/brand-icon';
 import Link from 'next/link';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
 import { DocArticle } from '@/components/doc-page';
@@ -11,7 +12,7 @@ export const metadata = pageMeta({ title: doc.title, description: doc.descriptio
 
 export default function AiVisibilityTutorial() {
   return (
-    <DocArticle slug={slug}>
+    <DocArticle slug={slug} brands={ASSISTANT_BRANDS}>
       <p>
         AI visibility asks the questions your customers ask, across the assistants they use, and records whether each
         answer mentions your brand, whether it cites your site, and where you come compared with your competitors.

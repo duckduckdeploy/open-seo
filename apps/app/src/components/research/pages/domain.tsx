@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowRight, ArrowUp, Link2, Minus, Plus, Swords } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Globe, Link2, Minus, Plus, Swords } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useMemo, useState } from "react";
@@ -127,7 +127,7 @@ export function DomainOverview({ project }: { project: Project }) {
       <SearchBar
         value={params.get("domain") ?? project.domain ?? ""}
         onSearch={(text) => nav({ domain: cleanDomain(text) }, { reset: true })}
-        label="Domain"
+        label="Domain" icon={Globe}
         placeholder="Enter a domain, e.g. example.com"
         maxLength={253}
         market={market}

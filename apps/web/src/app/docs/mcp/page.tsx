@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AGENT_SKILLS } from '@openseo/shared';
 import { Callout, DocTable, Step, Steps, Ui } from '@/components/doc-blocks';
+import { BrandIcon, type Brand } from '@/components/brand-icon';
 import { CodeBlock } from '@/components/code-block';
 import { CopyPromptButton } from '@/components/copy-prompt-button';
 import { DocArticle } from '@/components/doc-page';
@@ -11,6 +12,17 @@ import { GITHUB_URL, MCP_URL } from '@/lib/site';
 
 const slug = 'mcp';
 const doc = getDoc(slug);
+
+/** Logos by client id; VS Code has no free logo and gets a code icon. */
+const CLIENT_ICONS: Record<string, Brand> = {
+  'claude-code': 'claudecode',
+  'claude-desktop': 'claude',
+  cursor: 'cursor',
+  codex: 'codex',
+  gemini: 'geminicli',
+  opencode: 'opencode',
+  windsurf: 'windsurf',
+};
 
 export const metadata = pageMeta({ title: doc.title, description: doc.description, path: `/docs/${slug}` });
 
@@ -144,14 +156,18 @@ const pluginUpdate = `/plugin marketplace update openseo
 
 export default function McpPage() {
   return (
-    <DocArticle slug={slug}>
+    <DocArticle slug={slug} brands={['mcp', 'claude', 'chatgpt', 'claudecode', 'cursor', 'codex', 'geminicli', 'opencode', 'windsurf']}>
       <p>
         OpenSEO has an MCP server, so AI agents such as ChatGPT, Claude, Cursor, Codex and Gemini can use everything in
         the app: research keywords, check rankings, read your Search Console data, run audits. Skills add ready-made
         SEO workflows on top. Setup takes a couple of minutes.
       </p>
 
-      <h2 id="chatgpt">ChatGPT and Claude: sign in with OpenSEO</h2>
+      <h2 id="chatgpt" className="flex flex-wrap items-center gap-2">
+        <BrandIcon brand="chatgpt" className="size-6" />
+        <BrandIcon brand="claude" className="size-6" />
+        ChatGPT and Claude: sign in with OpenSEO
+      </h2>
       <p>
         ChatGPT and Claude (on the web and in the desktop app) connect through a custom connector and sign in with your
         OpenSEO account. No API key needed.
@@ -240,7 +256,10 @@ export default function McpPage() {
       </p>
       {clients.map((client) => (
         <section key={client.id}>
-          <h3 id={client.id}>{client.name}</h3>
+          <h3 id={client.id} className="flex items-center gap-2">
+            <BrandIcon brand={CLIENT_ICONS[client.id] ?? null} className="size-5" />
+            {client.name}
+          </h3>
           <CodeBlock label={client.where} code={client.code} />
           {client.note ? <p>{client.note}</p> : null}
         </section>

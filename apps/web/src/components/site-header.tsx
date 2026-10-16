@@ -1,4 +1,5 @@
 import { GITHUB_URL, SIGN_IN_URL, SIGN_UP_URL } from '@/lib/site';
+import { BrandIcon } from './brand-icon';
 import { ButtonLink } from './button';
 import { Logo } from './logo';
 import { MobileNav } from './mobile-nav';
@@ -19,8 +20,9 @@ export function SiteHeader() {
           {GITHUB_URL ? (
             <a
               href={GITHUB_URL}
-              className="hidden h-10 items-center rounded-md px-3 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink md:inline-flex"
+              className="hidden h-10 items-center rounded-md px-3 text-sm font-medium text-muted transition-colors duration-150 hover:text-ink md:inline-flex md:gap-2"
             >
+              <BrandIcon brand="github" />
               GitHub
             </a>
           ) : null}

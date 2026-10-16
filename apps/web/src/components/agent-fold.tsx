@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AGENT_CLIENTS, AGENT_SKILLS } from '@openseo/shared';
 import { setupPrompt } from '@/content/snippets';
+import { BrandIcon, BrandRow, CLIENT_BRANDS } from './brand-icon';
 import { CopyPromptButton } from './copy-prompt-button';
 import { SectionHeader } from './section';
 
@@ -74,9 +75,13 @@ export function AgentFold() {
       </ul>
 
       <div className="mx-auto mt-10 max-w-2xl text-center">
-        <p className="text-[0.9375rem] text-muted">
-          Works with <span className="text-ink">{AGENT_CLIENTS.slice(0, -1).join(', ')}</span> and <span className="text-ink">{AGENT_CLIENTS.at(-1)}</span>, and
-          any client that connects to an MCP server.
+        <BrandRow items={AGENT_CLIENTS.map((name) => ({ name, brand: CLIENT_BRANDS[name] ?? null }))} />
+        <p className="mt-5 inline-flex flex-wrap items-center justify-center gap-1.5 text-[0.9375rem] text-muted">
+          And any client that connects to an
+          <span className="inline-flex items-center gap-1.5 text-ink">
+            <BrandIcon brand="mcp" />
+            MCP server
+          </span>
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
           <CopyPromptButton text={setupPrompt} />
